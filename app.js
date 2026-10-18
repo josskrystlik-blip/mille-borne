@@ -73,10 +73,10 @@ function colorHex(id) {
 
 // Voiture de course façon dessin animé, vue de profil, tournée vers la droite :
 // les yeux dans le pare-brise, un sourire sur le pare-chocs et un éclair sur le flanc
-function carSvg(color, number) {
+function carSvg(color, number, cls = 'car-svg', attrs = '') {
   const blink = `${(number % 5) * 0.7}s`;
   return `
-  <svg class="car-svg" viewBox="0 0 140 56" style="--car:${color}; --blink-delay:${blink}">
+  <svg class="${cls}" viewBox="0 0 140 56" ${attrs} style="--car:${color}; --blink-delay:${blink}">
     <ellipse cx="70" cy="52" rx="62" ry="3.5" fill="rgba(0,0,0,.35)"/>
     <path d="M5 26 L2 12 Q2 9 6 9 L22 9 L24 24" fill="var(--car)" stroke="#1a1a1a" stroke-width="2.2" stroke-linejoin="round"/>
     <path d="M8 43 Q4 29 20 27 L42 25 Q54 9 80 9 Q101 10 111 25 L126 29 Q137 33 136 43 L132 47 L11 47 Z"
@@ -104,10 +104,10 @@ function carSvg(color, number) {
 }
 
 // Borne kilométrique française : corps blanc, tête rouge
-function borneSvg(label, cap = '') {
+function borneSvg(label, cap = '', cls = 'borne-svg', attrs = '') {
   const size = String(label).length >= 4 ? 10 : 12;
   return `
-  <svg class="borne-svg" viewBox="0 0 30 40">
+  <svg class="${cls}" viewBox="0 0 30 40" ${attrs}>
     <path d="M3 39 L3 15 Q3 3 15 3 Q27 3 27 15 L27 39 Z" fill="#fff" stroke="#222" stroke-width="2"/>
     <path d="M3 15 Q3 3 15 3 Q27 3 27 15 Z" fill="#d81e05" stroke="#222" stroke-width="2"/>
     ${cap ? `<text x="15" y="12.5" text-anchor="middle" font-family="Barlow, sans-serif" font-weight="700" font-size="7" fill="#fff">${cap}</text>` : ''}
@@ -274,55 +274,188 @@ function positions() {
   return state.players.map((p) => 1 + state.players.filter((q) => q.km > p.km).length);
 }
 
+/* ---------- Circuit ovale ---------- */
+
+// Repère du circuit (horizontal) ; sur un écran étroit on le fait pivoter d'un quart de tour
+const TRACK_W = 1000;
+const TRACK_H = 660;
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+let track = null;   // géométrie du circuit affiché
+let shown = [];     // km affichés pour chaque voiture (animés vers les vrais km)
+let animFrame = 0;
+
+function trackGeometry(n, portrait) {
+  const laneW = n > 4 ? 30 : 42;
+  const half = (n * laneW) / 2;              // demi-largeur de la piste
+  const margin = 56;                          // place pour les bornes autour
+  const r = TRACK_H / 2 - margin - half;      // rayon des virages (ligne centrale)
+  const a = TRACK_W / 2 - margin - half - r;  // demi-longueur des lignes droites
+  const carW = laneW * 2.3;
+  return {
+    n, laneW, half, r, a, portrait, carW, carH: carW * 0.4,
+    cx: TRACK_W / 2, cy: TRACK_H / 2,
+    length: 4 * a + 2 * Math.PI * r,
+  };
+}
+
+// Point du circuit à la fraction f du tour (0 = ligne de départ, en bas au milieu),
+// décalé de `off` vers l'extérieur ; renvoie les coordonnées à l'écran et la direction
+function trackPoint(f, off = 0) {
+  const { a, r, cx, cy, length } = track;
+  let s = (((f % 1) + 1) % 1) * length;
+  let x; let y; let dx; let dy;
+  if (s < a) { x = cx + s; y = cy + r; dx = 1; dy = 0; }
+  else if ((s -= a) < Math.PI * r) {
+    const t = s / r; x = cx + a + r * Math.sin(t); y = cy + r * Math.cos(t); dx = Math.cos(t); dy = -Math.sin(t);
+  } else if ((s -= Math.PI * r) < 2 * a) { x = cx + a - s; y = cy - r; dx = -1; dy = 0; }
+  else if ((s -= 2 * a) < Math.PI * r) {
+    const t = s / r; x = cx - a - r * Math.sin(t); y = cy - r * Math.cos(t); dx = -Math.cos(t); dy = Math.sin(t);
+  } else { s -= Math.PI * r; x = cx - a + s; y = cy + r; dx = 1; dy = 0; }
+  x += -dy * off; y += dx * off;
+  if (track.portrait) [x, y, dx, dy] = [y, TRACK_W - x, dy, -dx];
+  return { x, y, angle: Math.atan2(dy, dx) * 180 / Math.PI };
+}
+
+// Tracé SVG du circuit entre deux fractions du tour
+function trackPath(f0, f1, off = 0) {
+  const steps = Math.max(2, Math.ceil((f1 - f0) * 240));
+  let d = '';
+  for (let k = 0; k <= steps; k++) {
+    const pt = trackPoint(f0 + ((f1 - f0) * k) / steps, off);
+    d += `${k ? 'L' : 'M'}${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`;
+  }
+  return d;
+}
+
+function isPortrait() {
+  return $('#road').clientWidth < 600;
+}
+
 function buildRoad() {
   const goal = state.goal;
-  const marks = [];
-  for (let k = 100; k < goal; k += 100) marks.push(k);
-  const road = $('#road');
-  road.style.setProperty('--n', state.players.length);
-  road.classList.toggle('many', state.players.length > 4);
-  road.innerHTML = `
-    <div class="bornes">
-      <div class="borne start-borne" style="--b:0">${borneSvg(0, 'KM')}</div>
-      ${marks.map((k) => `<div class="borne" style="--b:${k / goal}">${borneSvg(k, 'KM')}</div>`).join('')}
-      <div class="borne goal-borne" style="--b:1">${borneSvg(goal, 'KM')}</div>
-    </div>
-    <div class="asphalt">
-      ${marks.map((k) => `<div class="gridline ${k % 500 === 0 ? 'half' : ''}" style="--b:${k / goal}"></div>`).join('')}
-      <div class="start-line"></div>
-      <div class="finish-line"></div>
-      ${state.players.map((p, i) => `
-        <div class="lane" data-index="${i}" style="--car:${p.color}">
-          <div class="trail"></div>
-          <div class="remain"></div>
-          <div class="car">${carSvg(p.color, p.number)}<span class="tag"></span><span class="bubble"></span></div>
-        </div>`).join('')}
-    </div>`;
+  const n = state.players.length;
+  track = trackGeometry(n, isPortrait());
+  const { half, laneW, carW, carH } = track;
+  const [vw, vh] = track.portrait ? [TRACK_H, TRACK_W] : [TRACK_W, TRACK_H];
+  const loop = (off) => `${trackPath(0, 1, off)}Z`;
+  const across = (f) => {
+    const p1 = trackPoint(f, -half); const p2 = trackPoint(f, half);
+    return `M${p1.x} ${p1.y}L${p2.x} ${p2.y}`;
+  };
+
+  const ticks = [];
+  for (let k = 100; k < goal; k += 100) {
+    ticks.push(`<path class="tick ${k % 500 === 0 ? 'half' : ''}" d="${across(k / goal)}"/>`);
+  }
+  const bornes = [];
+  for (let k = 100; k <= goal; k += 100) {
+    const pt = trackPoint(k / goal, half + 34);
+    bornes.push(borneSvg(k, 'KM', 'track-borne', `x="${pt.x - 17}" y="${pt.y - 23}" width="34" height="45"`));
+  }
+  const lanes = [];
+  for (let i = 1; i < n; i++) lanes.push(`<path class="lane-line" d="${loop(-half + i * laneW)}"/>`);
+  const mid = track.portrait ? { x: TRACK_H / 2, y: TRACK_W / 2 } : { x: TRACK_W / 2, y: TRACK_H / 2 };
+  const d = 7 / track.length;
+
+  $('#road').innerHTML = `
+    <svg class="track-svg" viewBox="0 0 ${vw} ${vh}" role="img" aria-label="Circuit de la course">
+      <path class="kerb-base" d="${loop(half + 6)}"/>
+      <path class="kerb" d="${loop(half + 6)}"/>
+      <path class="asphalt" d="${loop(0)}" style="stroke-width:${half * 2}"/>
+      <path class="kerb-base" d="${loop(-half - 6)}"/>
+      <path class="kerb" d="${loop(-half - 6)}"/>
+      <path class="grass" d="${loop(-half - 12)}"/>
+      ${lanes.join('')}
+      ${ticks.join('')}
+      <path class="finish-base" d="${across(0)}"/>
+      <path class="finish-a" d="${across(-d)}"/>
+      <path class="finish-b" d="${across(d)}"/>
+      <g class="infield" transform="translate(${mid.x} ${mid.y})">
+        <path d="M5 -58 L-13 -18 L0 -18 L-6 16 L17 -26 L3 -26 Z" fill="#ffd31a" stroke="#8c0a0e" stroke-width="4" stroke-linejoin="round"/>
+        <text y="50" class="infield-text">${goal} km</text>
+      </g>
+      ${bornes.join('')}
+      <g class="trails">${state.players.map((p, i) => `<path class="trail" data-index="${i}" style="stroke:${p.color}; stroke-width:${laneW * 0.45}"/>`).join('')}</g>
+      <g class="remains">${state.players.map((p, i) => `<path class="remain" data-index="${i}"/>`).join('')}</g>
+      <ellipse class="halo" rx="${carW * 0.62}" ry="${laneW * 0.62}"/>
+      <g class="cars">${state.players.map((p, i) => `
+        <g class="car" data-index="${i}">${carSvg(p.color, p.number, 'track-car', `x="${-carW / 2}" y="${-carH / 2}" width="${carW}" height="${carH}"`)}</g>`).join('')}</g>
+      <g class="fx"></g>
+      <text class="tag-text"></text>
+    </svg>`;
 }
+
+// Place voitures, traînées, halo et étiquette selon les km affichés
+function placeCars() {
+  if (!track) return;
+  const road = $('#road');
+  const { half, laneW, carW, carH, length } = track;
+  state.players.forEach((p, i) => {
+    const off = -half + laneW * (i + 0.5);
+    const f = Math.min(shown[i] / state.goal, 1);
+    // L'avant de la voiture touche le point du circuit correspondant à ses km
+    const c = trackPoint(f - carW / 2 / length, off);
+    const mirror = Math.cos(c.angle * Math.PI / 180) < -0.01;
+    const transform = mirror
+      ? `translate(${c.x} ${c.y}) rotate(${c.angle - 180}) scale(-1 1)`
+      : `translate(${c.x} ${c.y}) rotate(${c.angle})`;
+    road.querySelector(`.car[data-index="${i}"]`).setAttribute('transform', transform);
+    road.querySelector(`.trail[data-index="${i}"]`).setAttribute('d', f > 0 ? trackPath(0, f, off) : '');
+    road.querySelector(`.remain[data-index="${i}"]`).setAttribute('d', f < 1 ? trackPath(f, 1, off) : '');
+    if (i === state.current) {
+      const halo = road.querySelector('.halo');
+      halo.setAttribute('transform', `translate(${c.x} ${c.y}) rotate(${c.angle})`);
+      const tag = road.querySelector('.tag-text');
+      tag.setAttribute('x', c.x);
+      tag.setAttribute('y', c.y - carH / 2 - 14);
+    }
+  });
+}
+
+function animateCars() {
+  cancelAnimationFrame(animFrame);
+  const from = state.players.map((p, i) => (shown[i] ?? p.km));
+  const start = performance.now();
+  const step = (now) => {
+    const t = Math.min((now - start) / 1100, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    state.players.forEach((p, i) => { shown[i] = from[i] + (p.km - from[i]) * ease; });
+    placeCars();
+    if (t < 1) animFrame = requestAnimationFrame(step);
+  };
+  animFrame = requestAnimationFrame(step);
+}
+
+window.addEventListener('resize', () => {
+  if (state.screen !== 'race' || !track || track.portrait === isPortrait()) return;
+  buildRoad(); renderRace();
+});
 
 let lastTurn = -1;
 
 function renderRace(initial = false) {
   const goal = state.goal;
   const road = $('#road');
-  if (initial || road.querySelectorAll('.lane').length !== state.players.length) buildRoad();
+  const rebuild = initial || !track || road.querySelectorAll('.car').length !== state.players.length;
+  if (rebuild) buildRoad();
 
   const pos = positions();
-  road.querySelectorAll('.lane').forEach((lane, i) => {
+  road.querySelectorAll('.car').forEach((car, i) => {
     const p = state.players[i];
-    const progress = Math.min(p.km / goal, 1);
-    lane.style.setProperty('--p', progress);
-    lane.classList.toggle('active', i === state.current);
-    lane.classList.toggle('done', p.km >= goal);
-    const tag = lane.querySelector('.tag');
-    tag.innerHTML = p.km >= goal
-      ? `${escapeHtml(p.name)} 🏁`
-      : `${escapeHtml(p.name)} <em>· reste ${goal - p.km}</em>`;
-    // L'étiquette passe devant la voiture tant qu'il n'y a pas la place derrière
-    const car = lane.querySelector('.car');
-    const room = (lane.clientWidth - car.offsetWidth - 14) * progress;
-    lane.classList.toggle('tag-front', room < tag.offsetWidth + 8);
+    const active = i === state.current;
+    car.classList.toggle('active', active);
+    car.classList.toggle('done', p.km >= goal);
+    road.querySelector(`.trail[data-index="${i}"]`).classList.toggle('dim', !active);
+    road.querySelector(`.remain[data-index="${i}"]`).classList.toggle('dim', !active);
   });
+  // Le pilote actif passe au premier plan
+  const activeCar = road.querySelector(`.car[data-index="${state.current}"]`);
+  activeCar.parentNode.appendChild(activeCar);
+  const curP = state.players[state.current];
+  road.querySelector('.tag-text').textContent = curP.km >= goal
+    ? `${curP.name} 🏁` : `${curP.name} · reste ${goal - curP.km}`;
+  if (rebuild) { shown = state.players.map((p) => p.km); placeCars(); } else animateCars();
 
   // Le tableau est trié par position, le premier en haut
   const order = state.players.map((p, i) => i).sort((a, b) => pos[a] - pos[b] || a - b);
@@ -392,14 +525,9 @@ function addKm(km) {
   p.km += km;
   state.log.push({ player: i, km });
 
-  const lane = $('#road').querySelectorAll('.lane')[i];
-  const car = lane.querySelector('.car');
-  const bubble = car.querySelector('.bubble');
-  bubble.textContent = `+${km}`;
-  car.classList.remove('boost'); bubble.classList.remove('show');
-  void car.offsetWidth;
-  car.classList.add('boost'); bubble.classList.add('show');
-  smoke(lane, car);
+  const car = $('#road').querySelector(`.car[data-index="${i}"]`);
+  car.classList.remove('boost'); void car.getBoundingClientRect(); car.classList.add('boost');
+  trackEffects(i, km);
   vroom(km / 200);
   if (km === 200) flash();
 
@@ -416,19 +544,31 @@ function addKm(km) {
   setTimeout(announceTurn, 1000);
 }
 
-function smoke(lane, car) {
-  const rect = car.getBoundingClientRect(); const lr = lane.getBoundingClientRect();
+// « +50 » qui s'envole et petits nuages de fumée derrière la voiture
+function trackEffects(i, km) {
+  const fx = $('#road').querySelector('.fx');
+  if (!fx || !track) return;
+  const { half, laneW, carW, carH, length } = track;
+  const off = -half + laneW * (i + 0.5);
+  const f = Math.min(shown[i] / state.goal, 1);
+  const rear = trackPoint(f - carW / length, off);
+  const mid = trackPoint(f - carW / 2 / length, off);
   for (let n = 0; n < 5; n++) {
-    const s = document.createElement('span');
-    s.className = 'puff';
-    s.style.left = `${rect.left - lr.left}px`;
-    s.style.top = `${rect.top - lr.top + rect.height * 0.55}px`;
-    s.style.setProperty('--dx', `${-20 - Math.random() * 40}px`);
-    s.style.setProperty('--dy', `${-6 - Math.random() * 12}px`);
-    s.style.animationDelay = `${n * 60}ms`;
-    lane.appendChild(s);
-    setTimeout(() => s.remove(), 1200);
+    const c = document.createElementNS(SVG_NS, 'circle');
+    c.setAttribute('class', 'puff');
+    c.setAttribute('cx', rear.x); c.setAttribute('cy', rear.y); c.setAttribute('r', laneW * 0.22);
+    c.style.setProperty('--dx', `${(Math.random() - 0.5) * 50}px`);
+    c.style.setProperty('--dy', `${-10 - Math.random() * 25}px`);
+    c.style.animationDelay = `${n * 60}ms`;
+    fx.appendChild(c);
+    setTimeout(() => c.remove(), 1300);
   }
+  const t = document.createElementNS(SVG_NS, 'text');
+  t.setAttribute('class', 'bubble');
+  t.setAttribute('x', mid.x); t.setAttribute('y', mid.y - carH);
+  t.textContent = `+${km}`;
+  fx.appendChild(t);
+  setTimeout(() => t.remove(), 1500);
 }
 
 function flash() {
@@ -455,7 +595,7 @@ $('#cards').addEventListener('click', (e) => {
 });
 
 $('#road').addEventListener('click', (e) => {
-  const lane = e.target.closest('.lane'); if (lane) select(Number(lane.dataset.index));
+  const car = e.target.closest('.car'); if (car) select(Number(car.dataset.index));
 });
 
 $('#board').addEventListener('click', (e) => {

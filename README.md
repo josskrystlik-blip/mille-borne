@@ -1,8 +1,9 @@
 # ⚡ Mille Bornes Turbo
 
 Un compteur de kilomètres ludique pour jouer au **Mille Bornes** avec les enfants.
-Toutes les voitures font la course sur la même route, une voie par pilote, de borne en borne
-jusqu'à la ligne d'arrivée : on *voit* qui est devant et de combien, au lieu de faire des additions.
+Toutes les voitures font la course sur un circuit ovale, une voie par pilote : un tour complet
+= la course entière, avec une borne tous les 100 km et la ligne d'arrivée au damier.
+On *voit* qui est devant et de combien, au lieu de faire des additions.
 Un grand cartouche « À toi, Léo ! » indique à qui c'est le tour et combien de km il lui reste,
 avec une jauge jusqu'au drapeau. Sous les cartes, un tableau des positions (P1, P2…) donne les km de chacun.
 
@@ -16,9 +17,9 @@ avec une jauge jusqu'au drapeau. Sous les cartes, un tableau des positions (P1, 
 5. S'il pose une carte étape, on touche la même carte à l'écran. Comme dans le jeu,
    chaque carte montre sa borne kilométrique et son animal :
    25 escargot · 50 canard · 75 papillon · 100 lièvre · 200 hirondelle.
-   La voiture avance jusqu'à la bonne borne et c'est au pilote suivant.
+   La voiture avance sur le circuit jusqu'à la bonne borne et c'est au pilote suivant.
    S'il n'a pas de km à poser (attaque, parade…), on appuie sur **Pas de km ▶**.
-   On peut aussi toucher la voie ou la ligne d'un pilote dans le tableau pour lui donner la main.
+   On peut aussi toucher la voiture d'un pilote ou sa ligne dans le tableau pour lui donner la main.
 6. **💡 Comment finir ?** À partir de 200 km de l'arrivée, le compteur « Il reste » devient un
    bouton : en le touchant, l'enfant voit (et entend) les combinaisons de cartes qui permettent
    d'arriver pile, par exemple 100 + 75 + 25.
