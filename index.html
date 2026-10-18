@@ -4,36 +4,36 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Mille Bornes Turbo</title>
-  <meta name="description" content="Compteur de kilomètres ludique pour le Mille Bornes : chaque joueur a sa voiture de course qui avance jusqu'à l'arrivée.">
-  <meta name="theme-color" content="#ff8a3d">
+  <meta name="description" content="Compteur de kilomètres pour le Mille Bornes : toutes les voitures font la course sur la même route jusqu'à l'arrivée.">
+  <meta name="theme-color" content="#111214">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,600;0,700;1,700;1,800&family=Russo+One&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Décor : soleil et montagnes du désert -->
+  <!-- Décor : désert au coucher du soleil -->
   <div class="scenery" aria-hidden="true">
-    <div class="sun"></div>
     <svg class="mesas" viewBox="0 0 1200 200" preserveAspectRatio="none">
-      <path d="M0 200 L0 120 L60 120 L80 90 L190 90 L210 130 L330 130 L350 70 L470 70 L500 140 L640 140 L660 100 L760 100 L790 150 L900 150 L930 80 L1060 80 L1080 125 L1200 125 L1200 200 Z" fill="#c8553d" opacity=".55"/>
-      <path d="M0 200 L0 160 L120 160 L150 130 L260 130 L280 165 L520 165 L545 120 L640 120 L670 170 L980 170 L1000 140 L1110 140 L1130 168 L1200 168 L1200 200 Z" fill="#a63d2a" opacity=".55"/>
+      <path d="M0 200 L0 120 L60 120 L80 90 L190 90 L210 130 L330 130 L350 70 L470 70 L500 140 L640 140 L660 100 L760 100 L790 150 L900 150 L930 80 L1060 80 L1080 125 L1200 125 L1200 200 Z" fill="#5a1d1a"/>
+      <path d="M0 200 L0 160 L120 160 L150 130 L260 130 L280 165 L520 165 L545 120 L640 120 L670 170 L980 170 L1000 140 L1110 140 L1130 168 L1200 168 L1200 200 Z" fill="#33110f"/>
     </svg>
   </div>
 
   <header class="topbar">
-    <h1 class="logo"><span class="bolt">⚡</span> Mille Bornes <span class="turbo">Turbo</span></h1>
+    <h1 class="logo"><span class="bolt">⚡</span>Mille Bornes <span class="turbo">Turbo</span></h1>
     <div class="topbar-actions">
       <button id="btn-sound" class="icon-btn" aria-label="Couper le son">🔊</button>
-      <button id="btn-home" class="icon-btn" aria-label="Nouvelle partie" hidden>🏠</button>
+      <button id="btn-home" class="icon-btn" aria-label="Retour au menu" hidden>⏏</button>
     </div>
   </header>
+  <div class="checker-strip" aria-hidden="true"></div>
 
   <main>
     <!-- Écran 1 : préparation -->
     <section id="screen-setup" class="screen">
       <div class="panel">
-        <h2>Combien de pilotes ?</h2>
+        <h2>Nombre de pilotes</h2>
         <div id="count-buttons" class="count-buttons"></div>
       </div>
 
@@ -43,23 +43,26 @@
       </div>
 
       <div class="panel">
-        <h2>Distance de la course</h2>
+        <h2>Distance</h2>
         <div id="goal-buttons" class="goal-buttons"></div>
       </div>
 
-      <button id="btn-start" class="big-btn go">🏁 C'est parti !</button>
+      <button id="btn-start" class="big-btn go">Départ ▶</button>
     </section>
 
     <!-- Écran 2 : la course -->
     <section id="screen-race" class="screen" hidden>
-      <div id="lanes" class="lanes"></div>
+      <div class="track-panel">
+        <div id="road" class="road"></div>
+      </div>
+      <div id="board" class="board"></div>
 
       <div class="controls">
         <div id="turn-banner" class="turn-banner"></div>
         <div id="cards" class="cards"></div>
         <div class="control-row">
-          <button id="btn-undo" class="small-btn">↩️ Annuler</button>
-          <button id="btn-next" class="small-btn">Joueur suivant ➡️</button>
+          <button id="btn-undo" class="small-btn">↩ Annuler</button>
+          <button id="btn-next" class="small-btn">Pilote suivant ▶</button>
         </div>
       </div>
     </section>
@@ -67,13 +70,14 @@
     <!-- Écran 3 : arrivée -->
     <section id="screen-win" class="screen" hidden>
       <div class="panel win-panel">
-        <div class="checkers"></div>
+        <div class="win-checkers"></div>
+        <p class="win-kicker">Victoire</p>
         <h2 id="win-title" class="win-title"></h2>
         <div id="win-car" class="win-car"></div>
         <ol id="ranking" class="ranking"></ol>
         <div class="control-row">
-          <button id="btn-rematch" class="big-btn go">🔁 Revanche !</button>
-          <button id="btn-new" class="big-btn">🏠 Nouvelle partie</button>
+          <button id="btn-rematch" class="big-btn go">Revanche</button>
+          <button id="btn-new" class="big-btn">Nouvelle partie</button>
         </div>
       </div>
     </section>

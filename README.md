@@ -1,24 +1,26 @@
 # ⚡ Mille Bornes Turbo
 
 Un compteur de kilomètres ludique pour jouer au **Mille Bornes** avec les enfants.
-Chaque joueur a sa voiture de course qui avance sur une route du désert, de borne en borne,
-jusqu'au drapeau à damier : on *voit* l'avancement au lieu de faire des additions.
+Toutes les voitures font la course sur la même route, une voie par pilote, de borne en borne
+jusqu'à la ligne d'arrivée : on *voit* qui est devant et de combien, au lieu de faire des additions.
+Un tableau des positions (P1, P2…) donne les km de chacun et ce qu'il reste à parcourir.
 
 ## Comment jouer
 
 1. **Combien de pilotes ?** Choisir de 2 à 6 joueurs, taper les prénoms et la couleur de chaque voiture.
 2. **Distance** : 1000 km (règle classique) ou 700 km (course courte).
 3. **C'est parti !** Feu rouge, 3-2-1… partez !
-4. Quand un joueur pose une carte étape, on touche la même carte à l'écran :
-   🐌 25 · 🦆 50 · 🦋 75 · 🐇 100 · 🐦 200 — les petits carrés montrent la taille du saut.
-   La voiture avance, fait « vroum » et on passe automatiquement au joueur suivant.
+4. Quand un joueur pose une carte étape, on touche la même carte à l'écran. Comme dans le jeu,
+   chaque carte montre sa borne kilométrique et son animal :
+   25 escargot · 50 canard · 75 papillon · 100 lièvre · 200 hirondelle.
+   L'avant de la voiture avance jusqu'à la bonne borne et on passe automatiquement au pilote suivant.
 5. **Joueur suivant ➡️** : si le joueur a posé une autre carte (attaque, parade…).
-   On peut aussi toucher la piste d'un joueur pour le sélectionner directement.
+   On peut aussi toucher la voie ou la ligne d'un pilote dans le tableau pour le sélectionner.
 6. **↩️ Annuler** retire le dernier ajout en cas d'erreur.
 7. Comme dans le vrai jeu, il faut arriver **pile** à l'objectif : les cartes trop grandes sont grisées.
 
 La partie est sauvegardée dans le navigateur : on peut recharger la page sans rien perdre.
-Le bouton 🔊 coupe le son, 🏠 revient au menu.
+Le bouton 🔊 coupe le son, ⏏ revient au menu.
 
 ## Lancer le jeu
 
