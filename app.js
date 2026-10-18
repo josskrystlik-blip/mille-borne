@@ -10,7 +10,7 @@ const COLORS = [
   { id: 'violet', hex: '#8a3ffc', label: 'Violet' },
   { id: 'orange', hex: '#ff7a00', label: 'Orange' },
 ];
-const NUMBERS = [7, 12, 23, 31, 58, 88];
+const NUMBERS = [7, 12, 23, 31, 58, 86];
 const DEFAULT_NAMES = ['Pilote 1', 'Pilote 2', 'Pilote 3', 'Pilote 4', 'Pilote 5', 'Pilote 6'];
 
 // Les cartes « étape » du Mille Bornes, avec leur animal
@@ -65,23 +65,35 @@ function colorHex(id) {
   return (COLORS.find((c) => c.id === id) || COLORS[0]).hex;
 }
 
-// Voiture de course vue de profil, tournée vers la droite
+// Voiture de course façon dessin animé, vue de profil, tournée vers la droite :
+// les yeux dans le pare-brise, un sourire sur le pare-chocs et un éclair sur le flanc
 function carSvg(color, number) {
+  const blink = `${(number % 5) * 0.7}s`;
   return `
-  <svg class="car-svg" viewBox="0 0 140 50" style="--car:${color}">
-    <ellipse cx="70" cy="46" rx="62" ry="3.5" fill="rgba(0,0,0,.45)"/>
-    <path d="M4 22 L4 12 L20 12 L22 21" fill="#111" stroke="#111" stroke-width="2" stroke-linejoin="round"/>
-    <path d="M6 36 L6 26 Q8 21 22 20 L46 18 Q58 7 78 7 Q94 7 104 18 L126 22 Q136 25 136 33 L134 38 L8 38 Z"
-          fill="var(--car)" stroke="#111" stroke-width="2" stroke-linejoin="round"/>
-    <path d="M54 18 Q63 10 77 10 L77 18 Z M81 10 Q93 10 100 18 L81 18 Z" fill="#1b2633"/>
-    <path d="M57 15 L62 11" stroke="rgba(255,255,255,.5)" stroke-width="2" stroke-linecap="round"/>
-    <path d="M10 28 L132 28" stroke="rgba(255,255,255,.85)" stroke-width="3"/>
-    <path d="M10 32 L132 32" stroke="rgba(0,0,0,.25)" stroke-width="2"/>
-    <path d="M126 24 L134 26" stroke="#ffe680" stroke-width="3" stroke-linecap="round"/>
-    <rect x="66" y="21" width="22" height="14" rx="3" fill="#fff" stroke="#111" stroke-width="1.5"/>
-    <text x="77" y="32.5" text-anchor="middle" font-family="'Russo One', Impact, sans-serif" font-size="12" fill="#111">${number}</text>
-    <g class="wheel"><circle cx="34" cy="38" r="9" fill="#111"/><circle cx="34" cy="38" r="4.5" fill="#bbb"/><path d="M29.5 38 H38.5 M34 33.5 V42.5" stroke="#666" stroke-width="1.5"/></g>
-    <g class="wheel"><circle cx="112" cy="38" r="9" fill="#111"/><circle cx="112" cy="38" r="4.5" fill="#bbb"/><path d="M107.5 38 H116.5 M112 33.5 V42.5" stroke="#666" stroke-width="1.5"/></g>
+  <svg class="car-svg" viewBox="0 0 140 56" style="--car:${color}; --blink-delay:${blink}">
+    <ellipse cx="70" cy="52" rx="62" ry="3.5" fill="rgba(0,0,0,.35)"/>
+    <path d="M5 26 L2 12 Q2 9 6 9 L22 9 L24 24" fill="var(--car)" stroke="#1a1a1a" stroke-width="2.2" stroke-linejoin="round"/>
+    <path d="M8 43 Q4 29 20 27 L42 25 Q54 9 80 9 Q101 10 111 25 L126 29 Q137 33 136 43 L132 47 L11 47 Z"
+          fill="var(--car)" stroke="#1a1a1a" stroke-width="2.2" stroke-linejoin="round"/>
+    <path d="M20 30 Q60 27 128 32" stroke="rgba(255,255,255,.45)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M50 25 Q60 13 75 12 L75 25 Z" fill="#2b3f5c" stroke="#1a1a1a" stroke-width="1.8"/>
+    <path d="M79 12 Q100 12 109 26 L79 26 Z" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+    <g class="eyes">
+      <ellipse cx="88" cy="19.5" rx="5" ry="5.6" fill="#fff"/>
+      <ellipse cx="99.5" cy="20.5" rx="4.4" ry="5" fill="#fff"/>
+      <circle cx="90" cy="20" r="3.3" fill="#3d7be0"/><circle cx="90.6" cy="20" r="1.7" fill="#111"/><circle cx="91.4" cy="18.8" r=".8" fill="#fff"/>
+      <circle cx="101.2" cy="21" r="3" fill="#3d7be0"/><circle cx="101.8" cy="21" r="1.5" fill="#111"/><circle cx="102.5" cy="19.9" r=".7" fill="#fff"/>
+      <g class="lids">
+        <rect x="80" y="12.5" width="28" height="13.5" fill="var(--car)"/>
+      </g>
+    </g>
+    <path d="M121 39 Q128 43 134 38" stroke="#1a1a1a" stroke-width="1.8" fill="#fff" stroke-linecap="round"/>
+    <path d="M124 31 Q129 31 131 34 L125 35 Z" fill="#ffe35a" stroke="#1a1a1a" stroke-width="1.2"/>
+    <path d="M16 33 L44 32 L38 36.5 L64 35 L28 45 L34 39.5 L13 40 Z" fill="#ffd31a" stroke="#c0392b" stroke-width="1.6" stroke-linejoin="round"/>
+    <circle cx="76" cy="37" r="8.5" fill="#fff" stroke="#1a1a1a" stroke-width="1.8"/>
+    <text x="76" y="41.3" text-anchor="middle" font-family="'Russo One', Impact, sans-serif" font-size="11.5" fill="#1a1a1a">${number}</text>
+    <g class="wheel"><circle cx="33" cy="46" r="9.5" fill="#1a1a1a"/><circle cx="33" cy="46" r="5" fill="var(--car)" stroke="#ddd" stroke-width="1.5"/><circle cx="33" cy="46" r="1.6" fill="#ddd"/><path d="M33 41.5 V43.5 M33 48.5 V50.5 M28.5 46 H30.5 M35.5 46 H37.5" stroke="#ddd" stroke-width="1.4"/></g>
+    <g class="wheel"><circle cx="111" cy="46" r="9.5" fill="#1a1a1a"/><circle cx="111" cy="46" r="5" fill="var(--car)" stroke="#ddd" stroke-width="1.5"/><circle cx="111" cy="46" r="1.6" fill="#ddd"/><path d="M111 41.5 V43.5 M111 48.5 V50.5 M106.5 46 H108.5 M113.5 46 H115.5" stroke="#ddd" stroke-width="1.4"/></g>
   </svg>`;
 }
 
@@ -417,7 +429,7 @@ function renderWinner() {
 function confetti() {
   const box = $('#confetti');
   box.innerHTML = '';
-  const colors = ['#e10600', '#ffcc00', '#fff', '#111'];
+  const colors = ['#d7141a', '#ffd31a', '#3fa9f5', '#fff', '#111', '#ff8c1a'];
   for (let n = 0; n < 120; n++) {
     const c = document.createElement('i');
     c.style.left = `${Math.random() * 100}%`;
