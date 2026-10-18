@@ -27,6 +27,8 @@ const HELP_FROM = 200;
 const HELP_MAX_CARDS = 4;
 const HELP_MAX_COMBOS = 6;
 
+const WIDGETS = ['play', 'track', 'board', 'log'];
+
 const STORAGE_KEY = 'mille-bornes-turbo-v1';
 
 /* ---------- État ---------- */
@@ -42,6 +44,8 @@ function defaultState() {
     phase: 'draw', // 'draw' : le pilote doit piocher, 'play' : il pose sa carte
     log: [],
     muted: false,
+    voice: '',
+    layout: { order: [...WIDGETS], collapsed: {} },
   };
 }
 
@@ -72,34 +76,49 @@ function colorHex(id) {
 }
 
 // Voiture de course façon dessin animé, vue de profil, tournée vers la droite :
-// les yeux dans le pare-brise, un sourire sur le pare-chocs et un éclair sur le flanc
+// carrosserie basse, gros aileron, slicks, numéro et éclair sur le flanc,
+// et comme dans les dessins animés, des yeux dans le pare-brise et un sourire
 function carSvg(color, number, cls = 'car-svg', attrs = '') {
   const blink = `${(number % 5) * 0.7}s`;
+  const wheel = (x) => `
+    <g class="wheel">
+      <circle cx="${x}" cy="44" r="10.5" fill="#151515"/>
+      <circle cx="${x}" cy="44" r="8.2" fill="none" stroke="#ffd31a" stroke-width="1.2" stroke-dasharray="4 3"/>
+      <circle cx="${x}" cy="44" r="5.6" fill="var(--car)" stroke="#e6e6e6" stroke-width="1.6"/>
+      <path d="M${x} 39.6 V41.6 M${x} 46.4 V48.4 M${x - 4.4} 44 H${x - 2.4} M${x + 2.4} 44 H${x + 4.4}" stroke="#e6e6e6" stroke-width="1.4"/>
+      <circle cx="${x}" cy="44" r="1.8" fill="#e6e6e6"/>
+    </g>`;
   return `
-  <svg class="${cls}" viewBox="0 0 140 56" ${attrs} style="--car:${color}; --blink-delay:${blink}">
-    <ellipse cx="70" cy="52" rx="62" ry="3.5" fill="rgba(0,0,0,.35)"/>
-    <path d="M5 26 L2 12 Q2 9 6 9 L22 9 L24 24" fill="var(--car)" stroke="#1a1a1a" stroke-width="2.2" stroke-linejoin="round"/>
-    <path d="M8 43 Q4 29 20 27 L42 25 Q54 9 80 9 Q101 10 111 25 L126 29 Q137 33 136 43 L132 47 L11 47 Z"
+  <svg class="${cls}" viewBox="0 0 160 56" ${attrs} style="--car:${color}; --blink-delay:${blink}">
+    <ellipse cx="80" cy="52.5" rx="74" ry="3.5" fill="rgba(0,0,0,.35)"/>
+    <path d="M15 26 L12 11 M25 25 L22 11" stroke="#1a1a1a" stroke-width="3.2" stroke-linecap="round"/>
+    <path d="M1 7 L36 7 L33 14 L3 14 Z" fill="var(--car)" stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round"/>
+    <rect x="0" y="4" width="5" height="13" rx="1.5" fill="#1a1a1a"/>
+    <path d="M6 42 L6 31 Q7 26 16 25 L52 22 Q62 10 86 9 Q104 9 114 21 L140 26 Q153 28 156 36 L157 42 Q157 46 152 46 L10 46 Q6 46 6 42 Z"
           fill="var(--car)" stroke="#1a1a1a" stroke-width="2.2" stroke-linejoin="round"/>
-    <path d="M20 30 Q60 27 128 32" stroke="rgba(255,255,255,.45)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-    <path d="M50 25 Q60 13 75 12 L75 25 Z" fill="#2b3f5c" stroke="#1a1a1a" stroke-width="1.8"/>
-    <path d="M79 12 Q100 12 109 26 L79 26 Z" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+    <path d="M16 30 Q80 26 150 31" stroke="rgba(255,255,255,.5)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M24 45 L138 45" stroke="#1a1a1a" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M133 46 L159 46 L157 49.5 L136 49.5 Z" fill="#1a1a1a"/>
+    <rect x="16" y="40" width="9" height="3.2" rx="1.6" fill="#9a9a9a" stroke="#1a1a1a" stroke-width=".8"/>
+    <path d="M58 22 Q66 12 82 12 L82 22 Z" fill="#2b3f5c" stroke="#1a1a1a" stroke-width="1.8"/>
+    <path d="M62 19 L67 14" stroke="rgba(255,255,255,.5)" stroke-width="2" stroke-linecap="round"/>
+    <path d="M86 12 Q104 12 112 22 L86 22 Z" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
     <g class="eyes">
-      <ellipse cx="88" cy="19.5" rx="5" ry="5.6" fill="#fff"/>
-      <ellipse cx="99.5" cy="20.5" rx="4.4" ry="5" fill="#fff"/>
-      <circle cx="90" cy="20" r="3.3" fill="#3d7be0"/><circle cx="90.6" cy="20" r="1.7" fill="#111"/><circle cx="91.4" cy="18.8" r=".8" fill="#fff"/>
-      <circle cx="101.2" cy="21" r="3" fill="#3d7be0"/><circle cx="101.8" cy="21" r="1.5" fill="#111"/><circle cx="102.5" cy="19.9" r=".7" fill="#fff"/>
-      <g class="lids">
-        <rect x="80" y="12.5" width="28" height="13.5" fill="var(--car)"/>
-      </g>
+      <ellipse cx="94" cy="17.4" rx="4.6" ry="4.9" fill="#fff"/>
+      <ellipse cx="104.5" cy="18.4" rx="4" ry="4.4" fill="#fff"/>
+      <circle cx="95.8" cy="17.8" r="3.1" fill="#3d7be0"/><circle cx="96.4" cy="17.8" r="1.6" fill="#111"/><circle cx="97.1" cy="16.7" r=".8" fill="#fff"/>
+      <circle cx="106" cy="18.8" r="2.8" fill="#3d7be0"/><circle cx="106.6" cy="18.8" r="1.4" fill="#111"/><circle cx="107.2" cy="17.8" r=".7" fill="#fff"/>
+      <g class="lids"><rect x="87" y="12.4" width="25" height="10.6" fill="var(--car)"/></g>
     </g>
-    <path d="M121 39 Q128 43 134 38" stroke="#1a1a1a" stroke-width="1.8" fill="#fff" stroke-linecap="round"/>
-    <path d="M124 31 Q129 31 131 34 L125 35 Z" fill="#ffe35a" stroke="#1a1a1a" stroke-width="1.2"/>
-    <path d="M16 33 L44 32 L38 36.5 L64 35 L28 45 L34 39.5 L13 40 Z" fill="#ffd31a" stroke="#c0392b" stroke-width="1.6" stroke-linejoin="round"/>
-    <circle cx="76" cy="37" r="8.5" fill="#fff" stroke="#1a1a1a" stroke-width="1.8"/>
-    <text x="76" y="41.3" text-anchor="middle" font-family="'Russo One', Impact, sans-serif" font-size="11.5" fill="#1a1a1a">${number}</text>
-    <g class="wheel"><circle cx="33" cy="46" r="9.5" fill="#1a1a1a"/><circle cx="33" cy="46" r="5" fill="var(--car)" stroke="#ddd" stroke-width="1.5"/><circle cx="33" cy="46" r="1.6" fill="#ddd"/><path d="M33 41.5 V43.5 M33 48.5 V50.5 M28.5 46 H30.5 M35.5 46 H37.5" stroke="#ddd" stroke-width="1.4"/></g>
-    <g class="wheel"><circle cx="111" cy="46" r="9.5" fill="#1a1a1a"/><circle cx="111" cy="46" r="5" fill="var(--car)" stroke="#ddd" stroke-width="1.5"/><circle cx="111" cy="46" r="1.6" fill="#ddd"/><path d="M111 41.5 V43.5 M111 48.5 V50.5 M106.5 46 H108.5 M113.5 46 H115.5" stroke="#ddd" stroke-width="1.4"/></g>
+    <path d="M14 34 L48 32 L42 37 L78 35 L30 45 L37 40 L12 41 Z" fill="#ffd31a" stroke="#c0392b" stroke-width="1.6" stroke-linejoin="round"/>
+    <circle cx="90" cy="34" r="9" fill="#fff" stroke="#1a1a1a" stroke-width="1.8"/>
+    <text x="90" y="38.3" text-anchor="middle" font-family="'Russo One', Impact, sans-serif" font-size="11.5" fill="#1a1a1a">${number}</text>
+    <rect x="103" y="29" width="23" height="7.5" rx="2" fill="#fff" stroke="#1a1a1a" stroke-width="1"/>
+    <text x="114.5" y="34.9" text-anchor="middle" font-family="'Russo One', Impact, sans-serif" font-size="5.6" fill="#d7141a">TURBO</text>
+    <path d="M124 30 L133 31.5 M123 33.5 L132 35" stroke="rgba(0,0,0,.35)" stroke-width="1.4" stroke-linecap="round"/>
+    <path d="M143 30 Q150 30 153.5 33.5 L145 34.5 Z" fill="#ffe35a" stroke="#1a1a1a" stroke-width="1.1"/>
+    <path d="M140 39.5 Q147 43.5 154 38.5" stroke="#1a1a1a" stroke-width="1.8" fill="#fff" stroke-linecap="round"/>
+    ${wheel(38)}${wheel(126)}
   </svg>`;
 }
 
@@ -153,6 +172,24 @@ function vroom(power = 1) {
 
 /* ---------- Voix (synthèse vocale du navigateur) ---------- */
 
+// Les voix « naturelles » des navigateurs récents sont bien moins robotiques
+const GOOD_VOICE = /natural|neural|online|premium|enhanced|google|am[eé]lie|audrey|aur[eé]lie|thomas|marie|denise|henri|eloise|vivienne|remy|siri/i;
+
+function frenchVoices() {
+  if (!('speechSynthesis' in window)) return [];
+  return window.speechSynthesis.getVoices()
+    .filter((v) => v.lang && v.lang.toLowerCase().startsWith('fr'))
+    .map((v) => ({ v, score: (GOOD_VOICE.test(v.name) ? 10 : 0) + (v.localService ? 0 : 3) + (/fr[-_]fr/i.test(v.lang) ? 2 : 0) }))
+    .sort((x, y) => y.score - x.score);
+}
+
+function pickVoice() {
+  const voices = frenchVoices();
+  return (voices.find((x) => x.v.voiceURI === state.voice) || voices[0] || {}).v || null;
+}
+
+let sayId = 0;
+
 function say(text) {
   if (state.muted || !('speechSynthesis' in window)) return;
   try {
@@ -161,19 +198,23 @@ function say(text) {
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'fr-FR';
     u.rate = 1;
-    u.pitch = 1.1;
-    const voice = synth.getVoices().find((v) => v.lang && v.lang.toLowerCase().startsWith('fr'));
+    u.pitch = 1;
+    const voice = pickVoice();
     if (voice) u.voice = voice;
+    // Le micro ne doit pas entendre le jeu parler (« plus que 200 kilomètres »…)
+    const id = ++sayId;
+    pauseListening();
+    u.onend = u.onerror = () => { if (id === sayId) resumeListening(); };
     synth.speak(u);
   } catch (e) { /* pas de voix disponible */ }
 }
 
-function announceTurn() {
+function announceTurn(before = '') {
   const p = state.players[state.current];
   if (!p || state.screen !== 'race') return;
   const left = state.goal - p.km;
   const hint = left <= HELP_FROM ? ` Plus que ${left} kilomètres !` : '';
-  say(`C'est au tour de ${p.name} ! Pioche une carte.${hint}`);
+  say(`${before}C'est au tour de ${p.name} ! Pioche une carte.${hint}`);
 }
 
 const sfx = {
@@ -211,7 +252,36 @@ function renderSetup() {
       <span class="goal-km">${g} km</span>
       <span class="goal-sub">${g === 700 ? 'Course courte' : 'Course classique'}</span>
     </button>`).join('');
+  renderVoices();
 }
+
+function renderVoices() {
+  const select = $('#voice-select');
+  const voices = frenchVoices();
+  if (!voices.length) {
+    select.innerHTML = '<option>Voix par défaut de l\'appareil</option>';
+    select.disabled = true;
+    return;
+  }
+  select.disabled = false;
+  const current = pickVoice();
+  select.innerHTML = voices.map(({ v, score }) => `
+    <option value="${escapeHtml(v.voiceURI)}" ${current && v.voiceURI === current.voiceURI ? 'selected' : ''}>
+      ${score >= 10 ? '★ ' : ''}${escapeHtml(v.name)}
+    </option>`).join('');
+}
+
+if ('speechSynthesis' in window) window.speechSynthesis.addEventListener('voiceschanged', renderVoices);
+
+$('#voice-select').addEventListener('change', (e) => {
+  state.voice = e.target.value; save();
+  say('Bonjour ! Prêts pour la course ?');
+});
+
+$('#btn-voice-test').addEventListener('click', () => {
+  if (state.muted) { state.muted = false; save(); renderSound(); }
+  say('Bonjour ! Prêts pour la course ? C\'est au tour de Léo, pioche une carte !');
+});
 
 $('#count-buttons').addEventListener('click', (e) => {
   const b = e.target.closest('[data-count]'); if (!b) return;
@@ -293,7 +363,7 @@ function trackGeometry(n, portrait) {
   const a = TRACK_W / 2 - margin - half - r;  // demi-longueur des lignes droites
   const carW = laneW * 2.3;
   return {
-    n, laneW, half, r, a, portrait, carW, carH: carW * 0.4,
+    n, laneW, half, r, a, portrait, carW, carH: carW * 0.35,
     cx: TRACK_W / 2, cy: TRACK_H / 2,
     length: 4 * a + 2 * Math.PI * r,
   };
@@ -516,14 +586,14 @@ function renderRace(initial = false) {
   $('#play-zone').hidden = drawing;
   $('.draw-title').textContent = `${cur.name}, pioche une carte !`;
   $('#btn-undo').disabled = state.log.length === 0;
+  renderLog();
 }
 
-function addKm(km) {
-  const i = state.current;
+function addKm(km, i = state.current, meta = {}) {
   const p = state.players[i];
-  if (p.km + km > state.goal) { sfx.nope(); return; }
+  if (p.km + km > state.goal) { sfx.nope(); return false; }
   p.km += km;
-  state.log.push({ player: i, km });
+  state.log.push({ player: i, km, source: meta.source || 'tap', heard: meta.heard || '' });
 
   const car = $('#road').querySelector(`.car[data-index="${i}"]`);
   car.classList.remove('boost'); void car.getBoundingClientRect(); car.classList.add('boost');
@@ -532,17 +602,103 @@ function addKm(km) {
   if (km === 200) flash();
 
   if (p.km >= state.goal) {
-    renderRace();
-    $('#turn-banner').innerHTML = `<span class="turn-text"><b>${escapeHtml(p.name)}</b> passe la ligne !</span>`;
-    save();
-    setTimeout(() => showWinner(i), 1600);
-    return;
+    finish(i);
+    return true;
   }
 
   giveTurn((i + 1) % state.players.length);
   sfx.turn();
-  setTimeout(announceTurn, 1000);
+  const before = meta.source === 'voice' ? `${p.name} avance de ${km} kilomètres. ` : '';
+  setTimeout(() => announceTurn(before), 1000);
+  return true;
 }
+
+function finish(i) {
+  renderRace();
+  $('#turn-banner').innerHTML = `<span class="turn-text"><b>${escapeHtml(state.players[i].name)}</b> passe la ligne !</span>`;
+  save();
+  stopListening();
+  setTimeout(() => showWinner(i), 1600);
+}
+
+/* ---------- Historique : correction des coups ---------- */
+
+// Les km de chaque pilote sont la somme de ses coups dans l'historique
+function recomputeKm() {
+  state.players.forEach((p) => { p.km = 0; });
+  state.log.forEach((e) => { state.players[e.player].km += e.km; });
+}
+
+function renderLog() {
+  const list = $('#log');
+  if (!state.log.length) {
+    list.innerHTML = '<li class="log-empty">Aucun coup pour l\'instant.</li>';
+    return;
+  }
+  list.innerHTML = state.log.map((e, n) => ({ e, n })).reverse().map(({ e, n }) => `
+    <li class="log-row" style="--car:${state.players[e.player].color}">
+      <span class="log-icon" title="${e.source === 'voice' ? 'Entendu' : 'Touché'}">${e.source === 'voice' ? '🎤' : '👆'}</span>
+      <select class="log-player" data-entry="${n}" aria-label="Pilote">
+        ${state.players.map((p, i) => `<option value="${i}" ${i === e.player ? 'selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}
+      </select>
+      <select class="log-km" data-entry="${n}" aria-label="Kilomètres">
+        ${CARDS.map((c) => `<option value="${c.km}" ${c.km === e.km ? 'selected' : ''}>+${c.km} km ${c.emoji}</option>`).join('')}
+      </select>
+      <button class="log-del" data-entry="${n}" aria-label="Supprimer ce coup">✖</button>
+      ${e.heard ? `<span class="log-heard">« ${escapeHtml(e.heard)} »</span>` : ''}
+    </li>`).join('');
+}
+
+// Modifie l'historique ; refuse si un pilote dépasserait l'arrivée
+function editLog(change) {
+  const backup = state.log.map((e) => ({ ...e }));
+  change();
+  recomputeKm();
+  if (state.players.some((p) => p.km > state.goal)) {
+    state.log = backup;
+    recomputeKm();
+    sfx.nope();
+    toast('Impossible : ce pilote dépasserait l\'arrivée.');
+    renderRace();
+    return;
+  }
+  sfx.click();
+  save();
+  const winner = state.players.findIndex((p) => p.km >= state.goal);
+  if (winner >= 0) { finish(winner); return; }
+  if (state.players[state.current].km >= state.goal) state.current = 0;
+  renderRace();
+}
+
+$('#log').addEventListener('change', (e) => {
+  const n = Number(e.target.dataset.entry);
+  if (e.target.matches('.log-player')) editLog(() => { state.log[n].player = Number(e.target.value); });
+  if (e.target.matches('.log-km')) editLog(() => { state.log[n].km = Number(e.target.value); });
+});
+
+$('#log').addEventListener('click', (e) => {
+  const del = e.target.closest('.log-del');
+  if (del) editLog(() => { state.log.splice(Number(del.dataset.entry), 1); });
+});
+
+/* ---------- Bandeau de confirmation ---------- */
+
+let toastTimer = 0;
+function toast(text, fixable = false) {
+  $('#toast-text').textContent = text;
+  $('#btn-toast-fix').hidden = !fixable;
+  $('#toast').hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $('#toast').hidden = true; }, 6000);
+}
+
+$('#btn-toast-fix').addEventListener('click', () => {
+  $('#toast').hidden = true;
+  const w = document.querySelector('.widget[data-widget="log"]');
+  setCollapsed('log', false);
+  w.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  w.classList.remove('flash-widget'); void w.offsetWidth; w.classList.add('flash-widget');
+});
 
 // « +50 » qui s'envole et petits nuages de fumée derrière la voiture
 function trackEffects(i, km) {
@@ -616,7 +772,7 @@ $('#btn-next').addEventListener('click', () => {
 
 $('#btn-undo').addEventListener('click', () => {
   const last = state.log.pop(); if (!last) return;
-  state.players[last.player].km -= last.km;
+  recomputeKm();
   state.current = last.player;
   state.phase = 'play';
   sfx.undo(); save(); renderRace();
@@ -727,6 +883,7 @@ $('#btn-new').addEventListener('click', newGame);
 /* ---------- Navigation ---------- */
 
 function show(screen) {
+  if (screen !== 'race') stopListening();
   ['setup', 'race', 'win'].forEach((s) => { $(`#screen-${s}`).hidden = s !== screen; });
   $('#btn-home').hidden = screen === 'setup';
   window.scrollTo(0, 0);
@@ -753,9 +910,269 @@ $('#btn-sound').addEventListener('click', () => {
   if (state.muted && 'speechSynthesis' in window) window.speechSynthesis.cancel();
 });
 
+/* ---------- Écoute de la partie (reconnaissance vocale du navigateur) ---------- */
+
+// Mots reconnus dans une phrase (sans accents, en minuscules)
+const VALUE_WORDS = [
+  [['deux', 'cents'], 200], [['deux', 'cent'], 200], [['2', 'cents'], 200], [['2', 'cent'], 200],
+  [['soixante', 'quinze'], 75], [['vingt', 'cinq'], 25],
+  [['200'], 200], [['hirondelle'], 200, true], [['hirondelles'], 200, true], [['oiseau'], 200, true],
+  [['100'], 100], [['cent'], 100], [['cents'], 100], [['lievre'], 100, true], [['lievres'], 100, true],
+  [['lapin'], 100, true], [['lapins'], 100, true],
+  [['75'], 75], [['papillon'], 75, true], [['papillons'], 75, true],
+  [['50'], 50], [['cinquante'], 50], [['canard'], 50, true], [['canards'], 50, true],
+  [['25'], 25], [['escargot'], 25, true], [['escargots'], 25, true],
+];
+const SELF_WORDS = ['je', 'j', 'moi'];
+const GAME_WORDS = ['pose', 'poses', 'mets', 'met', 'mis', 'joue', 'joues', 'avance', 'avances', 'km', 'kilometre', 'kilometres', 'borne', 'bornes', 'carte', 'plus'];
+const SKIP_WORDS = ['reste', 'restent', 'faut', 'manque', 'manquent'];
+const NUMBER_WORDS = ['deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'mille'];
+const LINK_WORDS = ['pour', 'a', 'au', 'de', 'chez'];
+
+function normalize(text) {
+  return text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+// Transforme une phrase entendue en coups : [{ player, km }]
+function parseHeard(text, names, current) {
+  const words = normalize(text).split(' ').filter(Boolean);
+  if (words.some((w) => SKIP_WORDS.includes(w))) return [];
+  const nameWords = names.map((n) => normalize(n).split(' ').filter(Boolean));
+  const at = (i, seq) => seq.length && seq.every((w, k) => words[i + k] === w);
+
+  const mentions = [];
+  for (let i = 0; i < words.length;) {
+    const value = VALUE_WORDS.find(([seq]) => at(i, seq));
+    if (value) { mentions.push({ type: 'value', km: value[1], animal: !!value[2], pos: i, end: i + value[0].length }); i += value[0].length; continue; }
+    const player = nameWords.map((seq, p) => ({ seq, p })).filter(({ seq }) => at(i, seq))
+      .sort((x, y) => y.seq.length - x.seq.length)[0];
+    if (player) { mentions.push({ type: 'name', player: player.p, pos: i, end: i + player.seq.length }); i += player.seq.length; continue; }
+    if (SELF_WORDS.includes(words[i])) mentions.push({ type: 'self', pos: i, end: i + 1 });
+    i += 1;
+  }
+
+  const values = mentions.filter((m) => m.type === 'value');
+  if (!values.length) return [];
+  const trigger = mentions.some((m) => m.type !== 'value' || m.animal) || words.some((w) => GAME_WORDS.includes(w));
+  if (!trigger) return [];
+
+  // « cent cinquante », « trois cents » : ce sont des nombres, pas des cartes
+  const skip = new Set();
+  values.forEach((v, k) => {
+    const next = values[k + 1];
+    if (!v.animal && next && !next.animal && next.pos === v.end && v.km >= 100) { skip.add(v); skip.add(next); }
+    if (!v.animal && NUMBER_WORDS.includes(words[v.pos - 1]) && v.km === 100) skip.add(v);
+  });
+
+  const moves = [];
+  mentions.forEach((m, k) => {
+    if (m.type !== 'value' || skip.has(m)) return;
+    let player = current;
+    const next = mentions[k + 1];
+    const between = next ? words.slice(m.end, next.pos) : [];
+    const prev = mentions.slice(0, k).reverse().find((x) => x.type === 'name' || x.type === 'self');
+    if (next && next.type === 'name' && between.length <= 2 && between.every((w) => LINK_WORDS.includes(w))) player = next.player;
+    else if (prev && prev.type === 'name') player = prev.player;
+    moves.push({ player, km: m.km });
+  });
+  return moves;
+}
+
+const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const listen = { on: false, paused: false, rec: null };
+
+function setListenStatus(text) {
+  $('#listen-status').textContent = text;
+}
+
+function renderListen() {
+  const b = $('#btn-listen');
+  if (!Recognition) {
+    b.disabled = true;
+    b.textContent = '🎤 Écoute indisponible';
+    setListenStatus('Ce navigateur ne sait pas écouter : essayez Chrome, Edge ou Safari récents.');
+    return;
+  }
+  b.classList.toggle('on', listen.on);
+  b.textContent = listen.on ? '⏹ Arrêter l\'écoute' : '🎤 Écouter la partie';
+  if (!listen.on) setListenStatus('');
+  else if (!$('#listen-status').textContent) setListenStatus('J\'écoute… dites par exemple « Léo pose 50 ».');
+}
+
+function makeRecognition() {
+  const r = new Recognition();
+  r.lang = 'fr-FR';
+  r.continuous = true;
+  r.interimResults = true;
+  r.maxAlternatives = 3;
+  r.onresult = (e) => {
+    for (let k = e.resultIndex; k < e.results.length; k++) {
+      const res = e.results[k];
+      if (!res.isFinal) { setListenStatus(`J'entends : « ${res[0].transcript} »`); continue; }
+      if (!listen.paused) handleHeard(Array.from({ length: res.length }, (_, a) => res[a].transcript));
+    }
+  };
+  // Le navigateur coupe l'écoute après un silence : on la relance tant qu'elle est active
+  r.onend = () => { if (listen.on && !listen.paused) setTimeout(startRecognition, 250); };
+  r.onerror = (e) => {
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+      listen.on = false;
+      renderListen();
+      setListenStatus('Le micro est refusé : autorisez-le dans les réglages du navigateur.');
+    }
+  };
+  return r;
+}
+
+function startRecognition() {
+  try { listen.rec.start(); } catch (e) { /* déjà en cours */ }
+}
+
+function startListening() {
+  if (!Recognition) return;
+  listen.rec = listen.rec || makeRecognition();
+  listen.on = true;
+  listen.paused = false;
+  setListenStatus('');
+  startRecognition();
+  renderListen();
+}
+
+function stopListening() {
+  listen.on = false;
+  listen.paused = false;
+  if (listen.rec) try { listen.rec.abort(); } catch (e) { /* rien */ }
+  renderListen();
+}
+
+function pauseListening() {
+  if (!listen.on) return;
+  listen.paused = true;
+  try { listen.rec.abort(); } catch (e) { /* rien */ }
+}
+
+function resumeListening() {
+  if (!listen.on || !listen.paused) return;
+  setTimeout(() => { listen.paused = false; startRecognition(); }, 300);
+}
+
+function handleHeard(alternatives) {
+  if (state.screen !== 'race') return;
+  for (const text of alternatives) {
+    const moves = parseHeard(text, state.players.map((p) => p.name), state.current);
+    if (!moves.length) continue;
+    setListenStatus(`Compris : « ${text} »`);
+    moves.forEach(({ player, km }) => applyHeard(player, km, text));
+    return;
+  }
+  setListenStatus(`Entendu : « ${alternatives[0]} »`);
+}
+
+function applyHeard(i, km, text) {
+  if (state.players.some((p) => p.km >= state.goal)) return;
+  const p = state.players[i];
+  const left = state.goal - p.km;
+  if (km > left) {
+    sfx.nope();
+    toast(`🎤 ${p.name} +${km} : impossible, il lui reste ${left} km.`);
+    say(`Attention, ${p.name} dépasserait l'arrivée. Il lui reste ${left} kilomètres.`);
+    return;
+  }
+  addKm(km, i, { source: 'voice', heard: text });
+  toast(`🎤 ${p.name} +${km} km`, true);
+}
+
+$('#btn-listen').addEventListener('click', () => {
+  sfx.click();
+  if (listen.on) stopListening(); else startListening();
+});
+
+/* ---------- Widgets : réduire, agrandir, déplacer ---------- */
+
+const widget = (name) => document.querySelector(`.widget[data-widget="${name}"]`);
+
+function applyLayout() {
+  const box = $('#widgets');
+  const saved = (state.layout.order || []).filter((w) => WIDGETS.includes(w));
+  [...saved, ...WIDGETS.filter((w) => !saved.includes(w))].forEach((name) => box.appendChild(widget(name)));
+  WIDGETS.forEach((name) => setCollapsed(name, !!(state.layout.collapsed || {})[name], false));
+}
+
+function setCollapsed(name, value, persist = true) {
+  const w = widget(name);
+  w.classList.toggle('collapsed', value);
+  const b = w.querySelector('[data-action="collapse"]');
+  b.textContent = value ? '▸' : '▾';
+  b.setAttribute('aria-label', value ? 'Déplier' : 'Réduire');
+  state.layout.collapsed = { ...(state.layout.collapsed || {}), [name]: value };
+  if (persist) save();
+  if (!value && name === 'track') refitTrack();
+}
+
+// Le circuit change d'orientation selon la place disponible
+function refitTrack() {
+  if (state.screen === 'race' && track && track.portrait !== isPortrait()) { buildRoad(); renderRace(); }
+}
+
+function toggleExpand(name) {
+  const w = widget(name);
+  const on = !w.classList.contains('expanded');
+  document.querySelectorAll('.widget.expanded').forEach((x) => {
+    x.classList.remove('expanded');
+    x.querySelector('[data-action="expand"]').textContent = '⤢';
+  });
+  w.classList.toggle('expanded', on);
+  w.querySelector('[data-action="expand"]').textContent = on ? '✕' : '⤢';
+  document.body.classList.toggle('has-expanded', on);
+  if (on) setCollapsed(name, false);
+  refitTrack();
+}
+
+$('#widgets').addEventListener('click', (e) => {
+  const b = e.target.closest('.widget-btn'); if (!b) return;
+  const name = b.closest('.widget').dataset.widget;
+  sfx.click();
+  if (b.dataset.action === 'collapse') setCollapsed(name, !widget(name).classList.contains('collapsed'));
+  else toggleExpand(name);
+});
+
+// Glisser la barre de titre pour changer l'ordre des widgets
+$('#widgets').addEventListener('pointerdown', (e) => {
+  const bar = e.target.closest('.widget-bar');
+  if (!bar || e.target.closest('button')) return;
+  const w = bar.closest('.widget');
+  if (w.classList.contains('expanded')) return;
+  const box = $('#widgets');
+  e.preventDefault();
+  bar.setPointerCapture(e.pointerId);
+  w.classList.add('dragging');
+  const move = (ev) => {
+    if (ev.clientY > window.innerHeight - 60) window.scrollBy(0, 14);
+    else if (ev.clientY < 60) window.scrollBy(0, -14);
+    const others = [...box.children].filter((x) => x !== w);
+    const before = others.find((o) => { const r = o.getBoundingClientRect(); return ev.clientY < r.top + r.height / 2; });
+    if (before) { if (w.nextElementSibling !== before) box.insertBefore(w, before); }
+    else if (box.lastElementChild !== w) box.appendChild(w);
+  };
+  const up = () => {
+    bar.removeEventListener('pointermove', move);
+    bar.removeEventListener('pointerup', up);
+    bar.removeEventListener('pointercancel', up);
+    w.classList.remove('dragging');
+    state.layout.order = [...box.children].map((x) => x.dataset.widget);
+    save();
+  };
+  bar.addEventListener('pointermove', move);
+  bar.addEventListener('pointerup', up);
+  bar.addEventListener('pointercancel', up);
+});
+
 /* ---------- Démarrage ---------- */
 
 renderSound();
+applyLayout();
+renderListen();
 if (state.screen === 'race' && state.players.length) { show('race'); renderRace(true); }
 else if (state.screen === 'win' && state.players.length) { show('win'); renderWinner(); }
 else { state.screen = 'setup'; show('setup'); renderSetup(); }

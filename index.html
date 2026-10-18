@@ -56,46 +56,102 @@
         <div id="goal-buttons" class="goal-buttons"></div>
       </div>
 
+      <div class="panel">
+        <h2>Voix</h2>
+        <div class="voice-row">
+          <select id="voice-select" class="voice-select" aria-label="Choix de la voix"></select>
+          <button id="btn-voice-test" class="small-btn voice-test">▶ Écouter</button>
+        </div>
+        <p class="voice-hint">Les voix marquées ★ sont les plus naturelles disponibles sur cet appareil.</p>
+      </div>
+
       <button id="btn-start" class="big-btn go">Départ ▶</button>
     </section>
 
-    <!-- Écran 2 : la course -->
+    <!-- Écran 2 : la course (widgets qu'on peut réduire, agrandir et déplacer) -->
     <section id="screen-race" class="screen" hidden>
-      <div class="controls">
-        <div id="turn-banner" class="turn-banner"></div>
+      <div id="widgets" class="widgets">
+        <section class="widget" data-widget="play">
+          <header class="widget-bar">
+            <span class="widget-grip" title="Glisser pour déplacer" aria-hidden="true">⠿</span>
+            <h2 class="widget-title">Tour de jeu</h2>
+            <button class="widget-btn" data-action="collapse" aria-label="Réduire">▾</button>
+            <button class="widget-btn" data-action="expand" aria-label="Agrandir">⤢</button>
+          </header>
+          <div class="widget-body controls">
+            <div id="turn-banner" class="turn-banner"></div>
 
-        <!-- Étape 1 : piocher une carte -->
-        <div id="draw-zone" class="draw-zone">
-          <div class="deck" aria-hidden="true">
-            <div class="deck-card"></div>
-            <div class="deck-card"></div>
-            <div class="deck-card"></div>
-            <div class="deck-card deck-top"></div>
-            <span class="deck-hand">👆</span>
+            <!-- Étape 1 : piocher une carte -->
+            <div id="draw-zone" class="draw-zone">
+              <div class="deck" aria-hidden="true">
+                <div class="deck-card"></div>
+                <div class="deck-card"></div>
+                <div class="deck-card"></div>
+                <div class="deck-card deck-top"></div>
+                <span class="deck-hand">👆</span>
+              </div>
+              <div class="draw-text">
+                <p class="draw-title">Pioche une carte !</p>
+                <button id="btn-play" class="big-btn go play-btn">Jouer ▶</button>
+              </div>
+            </div>
+
+            <!-- Étape 2 : poser une carte kilomètres -->
+            <div id="play-zone" class="play-zone">
+              <p class="play-title">Pose ta carte kilomètres</p>
+              <div id="cards" class="cards"></div>
+            </div>
+
+            <div class="control-row">
+              <button id="btn-undo" class="small-btn">↩ Annuler</button>
+              <button id="btn-next" class="small-btn">Pas de km ▶</button>
+            </div>
+
+            <!-- Écoute de la partie -->
+            <div class="listen-row">
+              <button id="btn-listen" class="small-btn listen-btn">🎤 Écouter la partie</button>
+              <p id="listen-status" class="listen-status"></p>
+            </div>
           </div>
-          <div class="draw-text">
-            <p class="draw-title">Pioche une carte !</p>
-            <button id="btn-play" class="big-btn go play-btn">Jouer ▶</button>
+        </section>
+
+        <section class="widget" data-widget="track">
+          <header class="widget-bar">
+            <span class="widget-grip" title="Glisser pour déplacer" aria-hidden="true">⠿</span>
+            <h2 class="widget-title">Circuit</h2>
+            <button class="widget-btn" data-action="collapse" aria-label="Réduire">▾</button>
+            <button class="widget-btn" data-action="expand" aria-label="Agrandir">⤢</button>
+          </header>
+          <div class="widget-body track-panel">
+            <div id="road" class="road"></div>
           </div>
-        </div>
+        </section>
 
-        <!-- Étape 2 : poser une carte kilomètres -->
-        <div id="play-zone" class="play-zone">
-          <p class="play-title">Pose ta carte kilomètres</p>
-          <div id="cards" class="cards"></div>
-        </div>
+        <section class="widget" data-widget="board">
+          <header class="widget-bar">
+            <span class="widget-grip" title="Glisser pour déplacer" aria-hidden="true">⠿</span>
+            <h2 class="widget-title">Positions</h2>
+            <button class="widget-btn" data-action="collapse" aria-label="Réduire">▾</button>
+            <button class="widget-btn" data-action="expand" aria-label="Agrandir">⤢</button>
+          </header>
+          <div class="widget-body">
+            <div id="board" class="board"></div>
+          </div>
+        </section>
 
-        <div class="control-row">
-          <button id="btn-undo" class="small-btn">↩ Annuler</button>
-          <button id="btn-next" class="small-btn">Pas de km ▶</button>
-        </div>
+        <section class="widget" data-widget="log">
+          <header class="widget-bar">
+            <span class="widget-grip" title="Glisser pour déplacer" aria-hidden="true">⠿</span>
+            <h2 class="widget-title">Historique</h2>
+            <button class="widget-btn" data-action="collapse" aria-label="Réduire">▾</button>
+            <button class="widget-btn" data-action="expand" aria-label="Agrandir">⤢</button>
+          </header>
+          <div class="widget-body">
+            <p class="log-hint">Touchez un pilote ou une valeur pour corriger, ✖ pour supprimer.</p>
+            <ol id="log" class="log"></ol>
+          </div>
+        </section>
       </div>
-
-      <div class="track-panel">
-        <div id="road" class="road"></div>
-      </div>
-
-      <div id="board" class="board"></div>
     </section>
 
     <!-- Écran 3 : arrivée -->
@@ -136,6 +192,11 @@
       <div id="help-list" class="help-list"></div>
       <button id="btn-help-close" class="big-btn go">J'ai compris !</button>
     </div>
+  </div>
+
+  <div id="toast" class="toast" hidden>
+    <span id="toast-text"></span>
+    <button id="btn-toast-fix" class="toast-btn">Corriger</button>
   </div>
 
   <div id="flash" class="flash" aria-hidden="true"></div>
