@@ -360,6 +360,50 @@ main { max-width: 1100px; margin: 0 auto; padding: 16px; }
 }
 .gauge-flag { position: absolute; right: -28px; top: 50%; transform: translateY(-55%); font-size: 22px; }
 
+/* Étape 1 : la pioche */
+.draw-zone {
+  display: flex; align-items: center; justify-content: center; gap: 28px;
+  max-width: 600px; margin: 0 auto; padding: 14px 8px 18px;
+}
+.deck { position: relative; width: 110px; height: 154px; flex-shrink: 0; margin-top: 30px; }
+.deck-card {
+  position: absolute; inset: 0;
+  border-radius: 10px; border: 2px solid #000;
+  background:
+    linear-gradient(135deg, transparent 0 46%, rgba(255, 255, 255, .15) 46% 54%, transparent 54%),
+    linear-gradient(180deg, #f0262c, var(--red-dark));
+  box-shadow: inset 0 0 0 5px #fff, inset 0 0 0 8px var(--yellow), 0 3px 0 rgba(0, 0, 0, .4);
+}
+.deck-card::before {
+  content: ''; position: absolute; left: 30%; top: 22%; width: 40%; height: 56%;
+  background: var(--yellow);
+  clip-path: polygon(60% 0, 10% 55%, 45% 55%, 30% 100%, 90% 40%, 55% 40%);
+  filter: drop-shadow(1px 1px 0 #000);
+}
+.deck-card:nth-child(1) { transform: translate(-6px, 6px) rotate(-4deg); }
+.deck-card:nth-child(2) { transform: translate(-3px, 3px) rotate(-2deg); }
+.deck-card:nth-child(3) { transform: translate(0, 0); }
+.deck-top { animation: pick 2s ease-in-out infinite; z-index: 2; }
+.deck-hand {
+  position: absolute; right: -18px; bottom: -22px; z-index: 3;
+  font-size: 38px; animation: tap 1s ease-in-out infinite;
+}
+.draw-text { display: flex; flex-direction: column; align-items: center; gap: 14px; min-width: 0; }
+.draw-title {
+  margin: 0; text-align: center;
+  font-family: 'Racing Sans One', Impact, sans-serif; font-style: italic; font-size: 30px; line-height: 1.1;
+  color: var(--yellow); text-shadow: 2px 2px 0 var(--red);
+}
+.play-btn { width: auto; min-width: 220px; font-size: 34px; padding: 16px 34px; animation: pulse 1.1s ease-in-out infinite; }
+
+/* Étape 2 : poser la carte */
+.play-zone { animation: enter .4s cubic-bezier(.3, 1.5, .5, 1); }
+.play-title {
+  margin: 0 0 10px; text-align: center;
+  font-family: 'Racing Sans One', Impact, sans-serif; font-style: italic; font-size: 24px;
+  color: var(--yellow); text-shadow: 2px 2px 0 var(--red);
+}
+
 /* Cartes étape du Mille Bornes */
 .cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; max-width: 560px; margin: 0 auto; }
 .controls .control-row { max-width: 600px; margin-left: auto; margin-right: auto; }
@@ -445,6 +489,17 @@ main { max-width: 1100px; margin: 0 auto; padding: 16px; }
   60% { transform: rotate(1deg); }
   100% { transform: rotate(0); }
 }
+@keyframes pick {
+  0%, 25% { transform: translate(0, 0) rotate(0); }
+  50% { transform: translate(34px, -46px) rotate(14deg); }
+  62% { transform: translate(36px, -48px) rotate(16deg) scale(1.06); }
+  85%, 100% { transform: translate(0, 0) rotate(0); }
+}
+@keyframes tap { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 6px 0 #5c0508, 0 0 0 0 rgba(255, 211, 26, .7); }
+  50% { transform: scale(1.06); box-shadow: 0 6px 0 #5c0508, 0 0 0 12px rgba(255, 211, 26, 0); }
+}
 @keyframes hop { from { transform: translateY(0); } to { transform: translateY(-4px); } }
 @keyframes enter { from { transform: scale(.85); opacity: .3; } to { transform: scale(1); opacity: 1; } }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -468,6 +523,21 @@ main { max-width: 1100px; margin: 0 auto; padding: 16px; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+/* ---------- Tablettes et grands écrans : cartouche et pioche côte à côte ---------- */
+
+@media (min-width: 760px) {
+  .controls {
+    display: grid; gap: 12px 16px; align-items: center;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    grid-template-areas: "banner zone" "row zone";
+  }
+  .turn-banner { grid-area: banner; margin: 0; max-width: none; }
+  .draw-zone, .play-zone { grid-area: zone; }
+  .controls .control-row { grid-area: row; margin: 0; max-width: none; }
+  .draw-zone { padding: 0; }
+  .deck { width: 96px; height: 134px; }
 }
 
 /* ---------- Petits écrans ---------- */
@@ -510,6 +580,12 @@ main { max-width: 1100px; margin: 0 auto; padding: 16px; }
   .left-num { font-size: 40px; }
   .left-unit { font-size: 14px; }
   .gauge { height: 14px; }
+  .draw-zone { gap: 18px; padding: 8px 4px 14px; }
+  .deck { width: 80px; height: 112px; margin-top: 24px; }
+  .deck-hand { font-size: 30px; right: -14px; }
+  .draw-title { font-size: 22px; }
+  .play-btn { min-width: 0; font-size: 26px; padding: 12px 24px; }
+  .play-title { font-size: 19px; margin-bottom: 8px; }
   .small-btn { font-size: 14px; }
   .light { width: 46px; height: 46px; }
   .win-panel .control-row { flex-direction: column; }

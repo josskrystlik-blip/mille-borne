@@ -67,10 +67,31 @@
 
       <div class="controls">
         <div id="turn-banner" class="turn-banner"></div>
-        <div id="cards" class="cards"></div>
+
+        <!-- Étape 1 : piocher une carte -->
+        <div id="draw-zone" class="draw-zone">
+          <div class="deck" aria-hidden="true">
+            <div class="deck-card"></div>
+            <div class="deck-card"></div>
+            <div class="deck-card"></div>
+            <div class="deck-card deck-top"></div>
+            <span class="deck-hand">👆</span>
+          </div>
+          <div class="draw-text">
+            <p class="draw-title">Pioche une carte !</p>
+            <button id="btn-play" class="big-btn go play-btn">Jouer ▶</button>
+          </div>
+        </div>
+
+        <!-- Étape 2 : poser une carte kilomètres -->
+        <div id="play-zone" class="play-zone">
+          <p class="play-title">Pose ta carte kilomètres</p>
+          <div id="cards" class="cards"></div>
+        </div>
+
         <div class="control-row">
           <button id="btn-undo" class="small-btn">↩ Annuler</button>
-          <button id="btn-next" class="small-btn">Pilote suivant ▶</button>
+          <button id="btn-next" class="small-btn">Pas de km ▶</button>
         </div>
       </div>
 

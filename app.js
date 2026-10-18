@@ -34,6 +34,7 @@ function defaultState() {
     setup: DEFAULT_NAMES.map((name, i) => ({ name: '', color: COLORS[i].id })),
     players: [],
     current: 0,
+    phase: 'draw', // 'draw' : le pilote doit piocher, 'play' : il pose sa carte
     log: [],
     muted: false,
   };
@@ -145,6 +146,28 @@ function vroom(power = 1) {
   o.connect(f).connect(g).connect(ac.destination); o.start(t); o.stop(t + dur);
 }
 
+/* ---------- Voix (synthèse vocale du navigateur) ---------- */
+
+function say(text) {
+  if (state.muted || !('speechSynthesis' in window)) return;
+  try {
+    const synth = window.speechSynthesis;
+    synth.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'fr-FR';
+    u.rate = 1;
+    u.pitch = 1.1;
+    const voice = synth.getVoices().find((v) => v.lang && v.lang.toLowerCase().startsWith('fr'));
+    if (voice) u.voice = voice;
+    synth.speak(u);
+  } catch (e) { /* pas de voix disponible */ }
+}
+
+function announceTurn() {
+  const p = state.players[state.current];
+  if (p && state.screen === 'race') say(`C'est au tour de ${p.name} ! Pioche une carte.`);
+}
+
 const sfx = {
   click: () => tone(660, 0, 0.08, 'triangle', 0.1),
   beep: () => tone(440, 0, 0.25, 'square', 0.1),
@@ -217,7 +240,7 @@ $('#btn-start').addEventListener('click', () => {
 /* ---------- Course ---------- */
 
 function startRace() {
-  state.screen = 'race'; save();
+  state.screen = 'race'; state.phase = 'draw'; save();
   show('race');
   renderRace(true);
   countdown();
@@ -235,7 +258,7 @@ function countdown() {
     if (i < 3) { lights[i].classList.add('red'); sfx.beep(); }
     else { lights.forEach((l) => l.className = 'light green'); sfx.go(); vroom(1); }
   }, i * 800));
-  setTimeout(() => { overlay.hidden = true; }, steps.length * 800 + 300);
+  setTimeout(() => { overlay.hidden = true; announceTurn(); }, steps.length * 800 + 300);
 }
 
 // Classement : position de chaque joueur (les ex æquo partagent la même place)
@@ -337,6 +360,10 @@ function renderRace(initial = false) {
       <span class="card-name">${c.name}</span>
     </button>`).join('');
 
+  const drawing = state.phase !== 'play';
+  $('#draw-zone').hidden = !drawing;
+  $('#play-zone').hidden = drawing;
+  $('.draw-title').textContent = `${cur.name}, pioche une carte !`;
   $('#btn-undo').disabled = state.log.length === 0;
 }
 
@@ -366,10 +393,9 @@ function addKm(km) {
     return;
   }
 
-  state.current = (i + 1) % state.players.length;
-  save();
-  renderRace();
+  giveTurn((i + 1) % state.players.length);
   sfx.turn();
+  setTimeout(announceTurn, 1000);
 }
 
 function smoke(lane, car) {
@@ -392,9 +418,17 @@ function flash() {
   f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
 }
 
+// Passe la main à un pilote : il doit d'abord piocher
+function giveTurn(i) {
+  state.current = i;
+  state.phase = 'draw';
+  save();
+  renderRace();
+}
+
 function select(i) {
-  if (state.players[i].km >= state.goal) return;
-  state.current = i; sfx.click(); save(); renderRace();
+  if (state.players[i].km >= state.goal || i === state.current) return;
+  sfx.click(); giveTurn(i); announceTurn();
 }
 
 $('#cards').addEventListener('click', (e) => {
@@ -410,15 +444,23 @@ $('#board').addEventListener('click', (e) => {
   const row = e.target.closest('.board-row'); if (row) select(Number(row.dataset.index));
 });
 
-$('#btn-next').addEventListener('click', () => {
-  state.current = (state.current + 1) % state.players.length;
+$('#btn-play').addEventListener('click', () => {
+  state.phase = 'play';
   sfx.click(); save(); renderRace();
+  say('Choisis ta carte !');
+});
+
+$('#btn-next').addEventListener('click', () => {
+  sfx.click();
+  giveTurn((state.current + 1) % state.players.length);
+  announceTurn();
 });
 
 $('#btn-undo').addEventListener('click', () => {
   const last = state.log.pop(); if (!last) return;
   state.players[last.player].km -= last.km;
   state.current = last.player;
+  state.phase = 'play';
   sfx.undo(); save(); renderRace();
 });
 
@@ -432,6 +474,7 @@ function showWinner(index) {
   renderWinner();
   sfx.win();
   confetti();
+  setTimeout(() => say(`Bravo ${state.players[index].name} ! Tu as gagné la course !`), 900);
 }
 
 function renderWinner() {
@@ -482,6 +525,7 @@ function show(screen) {
 }
 
 function newGame() {
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
   state.screen = 'setup'; state.players = []; state.log = [];
   save(); show('setup'); renderSetup();
 }
@@ -498,6 +542,7 @@ function renderSound() {
 
 $('#btn-sound').addEventListener('click', () => {
   state.muted = !state.muted; save(); renderSound(); sfx.click();
+  if (state.muted && 'speechSynthesis' in window) window.speechSynthesis.cancel();
 });
 
 /* ---------- Démarrage ---------- */

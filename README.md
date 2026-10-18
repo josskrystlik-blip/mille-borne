@@ -11,17 +11,19 @@ avec une jauge jusqu'au drapeau. Sous les cartes, un tableau des positions (P1, 
 1. **Combien de pilotes ?** Choisir de 2 à 6 joueurs, taper les prénoms et la couleur de chaque voiture.
 2. **Distance** : 1000 km (règle classique) ou 700 km (course courte).
 3. **Départ** Feu rouge, 3-2-1… partez !
-4. Quand un joueur pose une carte étape, on touche la même carte à l'écran. Comme dans le jeu,
+4. **À chaque tour**, une voix annonce « C'est au tour de Léo ! Pioche une carte. »
+   Le paquet de cartes s'anime : le pilote pioche, puis appuie sur **Jouer ▶**.
+5. S'il pose une carte étape, on touche la même carte à l'écran. Comme dans le jeu,
    chaque carte montre sa borne kilométrique et son animal :
    25 escargot · 50 canard · 75 papillon · 100 lièvre · 200 hirondelle.
-   L'avant de la voiture avance jusqu'à la bonne borne et on passe automatiquement au pilote suivant.
-5. **Pilote suivant ▶** : si le joueur a posé une autre carte (attaque, parade…).
-   On peut aussi toucher la voie ou la ligne d'un pilote dans le tableau pour le sélectionner.
+   La voiture avance jusqu'à la bonne borne et c'est au pilote suivant.
+   S'il n'a pas de km à poser (attaque, parade…), on appuie sur **Pas de km ▶**.
+   On peut aussi toucher la voie ou la ligne d'un pilote dans le tableau pour lui donner la main.
 6. **↩ Annuler** retire le dernier ajout en cas d'erreur.
 7. Comme dans le vrai jeu, il faut arriver **pile** à l'objectif : les cartes trop grandes sont grisées.
 
 La partie est sauvegardée dans le navigateur : on peut recharger la page sans rien perdre.
-Le bouton 🔊 coupe le son, ⏏ revient au menu.
+Le bouton 🔊 coupe le son et la voix, ⏏ revient au menu.
 
 ## Lancer le jeu
 
