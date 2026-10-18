@@ -9,14 +9,14 @@ Un tableau des positions (P1, P2…) donne les km de chacun et ce qu'il reste à
 
 1. **Combien de pilotes ?** Choisir de 2 à 6 joueurs, taper les prénoms et la couleur de chaque voiture.
 2. **Distance** : 1000 km (règle classique) ou 700 km (course courte).
-3. **C'est parti !** Feu rouge, 3-2-1… partez !
+3. **Départ** Feu rouge, 3-2-1… partez !
 4. Quand un joueur pose une carte étape, on touche la même carte à l'écran. Comme dans le jeu,
    chaque carte montre sa borne kilométrique et son animal :
    25 escargot · 50 canard · 75 papillon · 100 lièvre · 200 hirondelle.
    L'avant de la voiture avance jusqu'à la bonne borne et on passe automatiquement au pilote suivant.
-5. **Joueur suivant ➡️** : si le joueur a posé une autre carte (attaque, parade…).
+5. **Pilote suivant ▶** : si le joueur a posé une autre carte (attaque, parade…).
    On peut aussi toucher la voie ou la ligne d'un pilote dans le tableau pour le sélectionner.
-6. **↩️ Annuler** retire le dernier ajout en cas d'erreur.
+6. **↩ Annuler** retire le dernier ajout en cas d'erreur.
 7. Comme dans le vrai jeu, il faut arriver **pile** à l'objectif : les cartes trop grandes sont grisées.
 
 La partie est sauvegardée dans le navigateur : on peut recharger la page sans rien perdre.
@@ -27,7 +27,7 @@ Le bouton 🔊 coupe le son, ⏏ revient au menu.
 Aucune installation : ouvrir `index.html` dans un navigateur (idéalement une tablette).
 
 Pour l'avoir en ligne gratuitement avec **GitHub Pages** :
-*Settings → Pages → Source : « Deploy from a branch » → branche `main`, dossier `/ (root)`*.
+*Settings → Pages → Source : « Deploy from a branch » → la branche du jeu, dossier `/ (root)`*.
 Le jeu sera disponible à l'adresse `https://<utilisateur>.github.io/mille-borne/`.
 Sur tablette, « Ajouter à l'écran d'accueil » permet de le lancer comme une appli.
 
