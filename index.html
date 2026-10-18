@@ -57,6 +57,11 @@
       </div>
 
       <div class="panel">
+        <h2>Règles</h2>
+        <div id="rules-buttons" class="goal-buttons"></div>
+      </div>
+
+      <div class="panel">
         <h2>Voix</h2>
         <div class="voice-row">
           <select id="voice-select" class="voice-select" aria-label="Choix de la voix"></select>
@@ -98,7 +103,8 @@
 
             <!-- Étape 2 : poser une carte kilomètres -->
             <div id="play-zone" class="play-zone">
-              <p class="play-title">Pose ta carte kilomètres</p>
+              <p class="play-title">Quelle carte poses-tu ?</p>
+              <div id="card-tabs" class="card-tabs" role="tablist"></div>
               <div id="cards" class="cards"></div>
             </div>
 
@@ -106,6 +112,7 @@
               <button id="btn-undo" class="small-btn">↩ Annuler</button>
               <button id="btn-next" class="small-btn">Pas de km ▶</button>
             </div>
+            <button id="btn-ask" class="small-btn ask-btn">❓ Puis-je jouer cette carte ?</button>
 
             <!-- Écoute de la partie -->
             <div class="listen-row">
@@ -191,6 +198,25 @@
       <h2 id="help-title" class="help-title"></h2>
       <div id="help-list" class="help-list"></div>
       <button id="btn-help-close" class="big-btn go">J'ai compris !</button>
+    </div>
+  </div>
+
+  <!-- « Puis-je jouer cette carte ? » -->
+  <div id="ask" class="overlay help-overlay" hidden>
+    <div class="help-panel ask-panel" role="dialog" aria-labelledby="ask-title">
+      <h2 id="ask-title" class="help-title"></h2>
+      <div id="ask-verdict" class="ask-verdict" hidden></div>
+      <div id="ask-grid" class="ask-grid"></div>
+      <button id="btn-ask-close" class="big-btn">Fermer</button>
+    </div>
+  </div>
+
+  <!-- Fenêtre de choix (cible d'une attaque, coup fourré) -->
+  <div id="dialog" class="overlay help-overlay" hidden>
+    <div class="help-panel" role="dialog" aria-labelledby="dialog-title">
+      <h2 id="dialog-title" class="help-title"></h2>
+      <div id="dialog-body" class="dialog-body"></div>
+      <div id="dialog-buttons" class="dialog-buttons"></div>
     </div>
   </div>
 

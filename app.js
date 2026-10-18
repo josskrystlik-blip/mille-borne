@@ -29,6 +29,31 @@ const HELP_MAX_COMBOS = 6;
 
 const WIDGETS = ['play', 'track', 'board', 'log'];
 
+// Les autres cartes du Mille Bornes : attaques (rouges), parades (vertes), bottes (bleues)
+const ACTIONS = {
+  red: { kind: 'hazard', name: 'Feu rouge', fix: 'green', safety: 'priority' },
+  limit: { kind: 'hazard', name: 'Limitation de vitesse', fix: 'end', safety: 'priority' },
+  fuel: { kind: 'hazard', name: 'Panne d\'essence', emoji: '⛽', fix: 'gas', safety: 'tank' },
+  flat: { kind: 'hazard', name: 'Crevaison', emoji: '🛞', fix: 'spare', safety: 'puncture' },
+  accident: { kind: 'hazard', name: 'Accident', emoji: '💥', fix: 'repair', safety: 'ace' },
+  green: { kind: 'remedy', name: 'Feu vert', cures: 'red' },
+  end: { kind: 'remedy', name: 'Fin de limitation', cures: 'limit' },
+  gas: { kind: 'remedy', name: 'Essence', emoji: '⛽', cures: 'fuel' },
+  spare: { kind: 'remedy', name: 'Roue de secours', emoji: '🛞', cures: 'flat' },
+  repair: { kind: 'remedy', name: 'Réparations', emoji: '🔧', cures: 'accident' },
+  priority: { kind: 'safety', name: 'Véhicule prioritaire', emoji: '🚒', protects: ['red', 'limit'] },
+  tank: { kind: 'safety', name: 'Citerne d\'essence', emoji: '🛢️', protects: ['fuel'] },
+  puncture: { kind: 'safety', name: 'Increvable', emoji: '🛡️', protects: ['flat'] },
+  ace: { kind: 'safety', name: 'As du volant', emoji: '🏎️', protects: ['accident'] },
+};
+const KINDS = {
+  km: { label: '🛣️ Km', title: 'Kilomètres', color: '#e0451b' },
+  hazard: { label: '⚔️ Attaquer', title: 'Attaques', color: '#d7141a', corner: 'ATTAQUE' },
+  remedy: { label: '🔧 Réparer', title: 'Parades', color: '#1f9d48', corner: 'PARADE' },
+  safety: { label: '⭐ Bottes', title: 'Bottes', color: '#1d63c8', corner: 'BOTTE' },
+};
+const actionsOf = (kind) => Object.keys(ACTIONS).filter((id) => ACTIONS[id].kind === kind);
+
 const STORAGE_KEY = 'mille-bornes-turbo-v1';
 
 /* ---------- État ---------- */
@@ -45,6 +70,7 @@ function defaultState() {
     log: [],
     muted: false,
     voice: '',
+    rules: 'full', // 'full' : attaques, parades et bottes ; 'km' : seulement les kilomètres
     layout: { order: [...WIDGETS], collapsed: {} },
   };
 }
@@ -134,6 +160,21 @@ function borneSvg(label, cap = '', cls = 'borne-svg', attrs = '') {
   </svg>`;
 }
 
+// Dessin d'une carte attaque / parade / botte
+function actionIcon(id) {
+  const light = (on) => `<svg class="act-svg" viewBox="0 0 26 52"><rect x="2" y="2" width="22" height="48" rx="7" fill="#222"/>
+    <circle cx="13" cy="14" r="7" fill="${on === 'red' ? '#ff2a1a' : '#555'}"/><circle cx="13" cy="26" r="7" fill="#555"/>
+    <circle cx="13" cy="38" r="7" fill="${on === 'green' ? '#2bd65a' : '#555'}"/></svg>`;
+  if (id === 'red') return light('red');
+  if (id === 'green') return light('green');
+  if (id === 'limit') return `<svg class="act-svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="#fff" stroke="#d7141a" stroke-width="5"/>
+    <text x="20" y="25.5" text-anchor="middle" font-family="'Russo One', sans-serif" font-size="15" fill="#111">50</text></svg>`;
+  if (id === 'end') return `<svg class="act-svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="#fff" stroke="#888" stroke-width="3"/>
+    <text x="20" y="25.5" text-anchor="middle" font-family="'Russo One', sans-serif" font-size="15" fill="#999">50</text>
+    <path d="M9 31 L31 9 M12 34 L34 12 M6 28 L28 6" stroke="#111" stroke-width="2"/></svg>`;
+  return `<span class="act-emoji">${ACTIONS[id].emoji}</span>`;
+}
+
 /* ---------- Sons (synthétisés, aucun fichier) ---------- */
 
 let audioCtx = null;
@@ -213,7 +254,9 @@ function announceTurn(before = '') {
   const p = state.players[state.current];
   if (!p || state.screen !== 'race') return;
   const left = state.goal - p.km;
-  const hint = left <= HELP_FROM ? ` Plus que ${left} kilomètres !` : '';
+  const need = fullRules() && needed(p);
+  const hint = need ? ` Il te faut ${ACTIONS[need].name}.`
+    : left <= HELP_FROM ? ` Plus que ${left} kilomètres !` : '';
   say(`${before}C'est au tour de ${p.name} ! Pioche une carte.${hint}`);
 }
 
@@ -252,8 +295,17 @@ function renderSetup() {
       <span class="goal-km">${g} km</span>
       <span class="goal-sub">${g === 700 ? 'Course courte' : 'Course classique'}</span>
     </button>`).join('');
+  $('#rules-buttons').innerHTML = [['full', 'Règles complètes', 'Attaques, parades, bottes'], ['km', 'Km seulement', 'Partie rapide']].map(([id, t, sub]) => `
+    <button class="goal-btn ${state.rules === id ? 'active' : ''}" data-rules="${id}">
+      <span class="goal-km">${t}</span><span class="goal-sub">${sub}</span>
+    </button>`).join('');
   renderVoices();
 }
+
+$('#rules-buttons').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-rules]'); if (!b) return;
+  state.rules = b.dataset.rules; sfx.click(); save(); renderSetup();
+});
 
 function renderVoices() {
   const select = $('#voice-select');
@@ -312,13 +364,14 @@ $('#btn-start').addEventListener('click', () => {
   }));
   state.current = 0;
   state.log = [];
+  recomputeKm();
   startRace();
 });
 
 /* ---------- Course ---------- */
 
 function startRace() {
-  state.screen = 'race'; state.phase = 'draw'; save();
+  state.screen = 'race'; state.phase = 'draw'; cardTab = autoTab(state.current); save();
   show('race');
   renderRace(true);
   countdown();
@@ -451,6 +504,12 @@ function buildRoad() {
       <ellipse class="halo" rx="${carW * 0.62}" ry="${laneW * 0.62}"/>
       <g class="cars">${state.players.map((p, i) => `
         <g class="car" data-index="${i}">${carSvg(p.color, p.number, 'track-car', `x="${-carW / 2}" y="${-carH / 2}" width="${carW}" height="${carH}"`)}</g>`).join('')}</g>
+      <g class="statuses">${state.players.map((p, i) => `
+        <g class="status" data-index="${i}">
+          <text class="st-battle" x="0" y="0"></text>
+          <g class="st-limit" transform="translate(24 -9)"><circle r="12" fill="#fff" stroke="#d7141a" stroke-width="4"/>
+            <text y="5" class="st-limit-text">50</text></g>
+        </g>`).join('')}</g>
       <g class="fx"></g>
       <text class="tag-text"></text>
     </svg>`;
@@ -473,12 +532,13 @@ function placeCars() {
     road.querySelector(`.car[data-index="${i}"]`).setAttribute('transform', transform);
     road.querySelector(`.trail[data-index="${i}"]`).setAttribute('d', f > 0 ? trackPath(0, f, off) : '');
     road.querySelector(`.remain[data-index="${i}"]`).setAttribute('d', f < 1 ? trackPath(f, 1, off) : '');
+    road.querySelector(`.status[data-index="${i}"]`).setAttribute('transform', `translate(${c.x} ${c.y - carH / 2 - 12})`);
     if (i === state.current) {
       const halo = road.querySelector('.halo');
       halo.setAttribute('transform', `translate(${c.x} ${c.y}) rotate(${c.angle})`);
       const tag = road.querySelector('.tag-text');
       tag.setAttribute('x', c.x);
-      tag.setAttribute('y', c.y - carH / 2 - 14);
+      tag.setAttribute('y', c.y - carH / 2 - (statusShown(p) ? 44 : 14));
     }
   });
 }
@@ -525,6 +585,11 @@ function renderRace(initial = false) {
   const curP = state.players[state.current];
   road.querySelector('.tag-text').textContent = curP.km >= goal
     ? `${curP.name} 🏁` : `${curP.name} · reste ${goal - curP.km}`;
+  state.players.forEach((p, i) => {
+    const st = road.querySelector(`.status[data-index="${i}"]`);
+    st.querySelector('.st-battle').textContent = statusIcon(p);
+    st.querySelector('.st-limit').style.display = fullRules() && p.limited ? '' : 'none';
+  });
   if (rebuild) { shown = state.players.map((p) => p.km); placeCars(); } else animateCars();
 
   // Le tableau est trié par position, le premier en haut
@@ -537,7 +602,7 @@ function renderRace(initial = false) {
       <span class="pos">P${pos[i]}</span>
       <span class="board-name">${escapeHtml(p.name)}</span>
       <span class="board-km">${p.km}<small> km</small></span>
-      <span class="board-left">${p.km >= goal ? 'Arrivé' : `reste ${goal - p.km}`}</span>
+      <span class="board-left">${p.km >= goal ? 'Arrivé' : `reste ${goal - p.km}`}${boardStatus(p)}</span>
     </button>`;
   }).join('');
 
@@ -548,7 +613,7 @@ function renderRace(initial = false) {
   banner.innerHTML = `
     <div class="turn-who">
       <span class="turn-car">${carSvg(cur.color, cur.number)}</span>
-      <span class="turn-text">À toi,<br><b>${escapeHtml(cur.name)}</b> !</span>
+      <span class="turn-text">À toi,<br><b>${escapeHtml(cur.name)}</b> !${needLine(cur)}</span>
     </div>
     ${remaining <= HELP_FROM ? `
     <button class="turn-left help" aria-label="Voir les cartes pour finir">
@@ -572,14 +637,16 @@ function renderRace(initial = false) {
     lastTurn = state.current;
   }
 
-  $('#cards').innerHTML = CARDS.map((c) => `
-    <button class="card" data-km="${c.km}" style="--card:${c.color}" ${c.km > remaining ? 'disabled' : ''}
-            aria-label="${c.km} kilomètres, ${c.name}">
-      <span class="card-corner">${c.km}</span>
-      <span class="card-borne">${borneSvg(c.km, 'KM')}</span>
-      <span class="card-animal">${c.emoji}</span>
-      <span class="card-name">${c.name}</span>
-    </button>`).join('');
+  if (!fullRules()) cardTab = 'km';
+  $('#card-tabs').hidden = !fullRules();
+  $('#card-tabs').innerHTML = Object.keys(KINDS).map((k) => `
+    <button class="card-tab ${k === cardTab ? 'active' : ''}" data-tab="${k}" role="tab" style="--card:${KINDS[k].color}">${KINDS[k].label}</button>`).join('');
+  const need = needed(cur);
+  $('#cards').classList.toggle('cards-4', cardTab === 'safety');
+  $('#cards').innerHTML = cardTab === 'km'
+    ? CARDS.map((c) => kmCardHtml(c, !canPlay(state.current, c.km).ok)).join('')
+    : actionsOf(cardTab).map((id) => actionCardHtml(id, !canPlay(state.current, id).ok, id === need)).join('');
+  $('#btn-next').textContent = fullRules() ? 'Je jette ▶' : 'Pas de km ▶';
 
   const drawing = state.phase !== 'play';
   $('#draw-zone').hidden = !drawing;
@@ -587,6 +654,65 @@ function renderRace(initial = false) {
   $('.draw-title').textContent = `${cur.name}, pioche une carte !`;
   $('#btn-undo').disabled = state.log.length === 0;
   renderLog();
+}
+
+let cardTab = 'km';
+
+function kmCardHtml(c, blocked) {
+  return `
+    <button class="card ${blocked ? 'blocked' : ''}" data-km="${c.km}" style="--card:${c.color}"
+            aria-label="${c.km} kilomètres, ${c.name}">
+      <span class="card-corner">${c.km}</span>
+      <span class="card-borne">${borneSvg(c.km, 'KM')}</span>
+      <span class="card-animal">${c.emoji}</span>
+      <span class="card-name">${c.name}</span>
+    </button>`;
+}
+
+function actionCardHtml(id, blocked, wanted = false) {
+  const kind = ACTIONS[id].kind;
+  return `
+    <button class="card act-card ${blocked ? 'blocked' : ''} ${wanted ? 'wanted' : ''}" data-card="${id}"
+            style="--card:${KINDS[kind].color}" aria-label="${ACTIONS[id].name}">
+      <span class="card-corner">${KINDS[kind].corner}</span>
+      <span class="act-icon">${actionIcon(id)}</span>
+      <span class="card-name">${ACTIONS[id].name}</span>
+    </button>`;
+}
+
+// Ce qui s'affiche au-dessus de la voiture : pourquoi elle est arrêtée
+function statusIcon(p) {
+  if (!fullRules() || rolling(p) || p.km >= state.goal) return '';
+  return { none: '🚦', fixed: '🚦', red: '🔴', fuel: '⛽', flat: '🛞', accident: '💥' }[p.battle] || '';
+}
+
+function statusShown(p) {
+  return !!statusIcon(p) || (fullRules() && p.limited);
+}
+
+function boardStatus(p) {
+  if (!fullRules()) return '';
+  const icons = [statusIcon(p), p.limited ? '🚫50' : '', ...(p.safeties || []).map((x) => ACTIONS[x].emoji)].filter(Boolean);
+  return icons.length ? ` · ${icons.join(' ')}` : '';
+}
+
+function needLine(p) {
+  if (!fullRules() || p.km >= state.goal) return '';
+  const need = needed(p);
+  if (need) return `<span class="turn-need">Il te faut : <b>${ACTIONS[need].name}</b></span>`;
+  if (p.limited) return '<span class="turn-need">Limité à 50 : cartes 25 et 50</span>';
+  return '';
+}
+
+// Onglet à ouvrir au début du tour : réparer si la voiture est arrêtée
+function autoTab(i) {
+  return fullRules() && needed(state.players[i]) ? 'remedy' : 'km';
+}
+
+function explain(reason) {
+  sfx.nope();
+  toast(reason);
+  say(reason);
 }
 
 function addKm(km, i = state.current, meta = {}) {
@@ -613,6 +739,101 @@ function addKm(km, i = state.current, meta = {}) {
   return true;
 }
 
+function playAction(card, target) {
+  const i = state.current;
+  const p = state.players[i];
+  const a = ACTIONS[card];
+  if (a.kind === 'hazard' && target === undefined) { chooseTarget(card); return; }
+  state.log.push({ player: i, card, target, source: 'tap' });
+  recomputeKm();
+  save();
+  if (a.kind === 'hazard') {
+    const t = state.players[target];
+    sfx.nope();
+    renderRace();
+    say(`${p.name} met ${a.name} à ${t.name} !`);
+    askCoupFourre(i, target, card);
+    return;
+  }
+  if (a.kind === 'safety') {
+    sfx.win();
+    flash();
+    state.phase = 'draw';
+    renderRace();
+    toast(`⭐ ${p.name} pose la botte ${a.name} et rejoue !`);
+    setTimeout(() => say(`Bravo ! ${a.name}. ${p.name}, tu rejoues : pioche une carte.`), 300);
+    return;
+  }
+  sfx.click();
+  vroom(0.3);
+  giveTurn((i + 1) % state.players.length);
+  sfx.turn();
+  setTimeout(() => announceTurn(`${a.name} pour ${p.name}. `), 900);
+}
+
+function dialog(title, body, buttons) {
+  $('#dialog-title').innerHTML = title;
+  $('#dialog-body').innerHTML = body;
+  $('#dialog-buttons').innerHTML = '';
+  buttons.forEach(({ label, cls = '', disabled = false, onClick }) => {
+    const b = document.createElement('button');
+    b.className = `big-btn ${cls}`;
+    b.innerHTML = label;
+    b.disabled = disabled;
+    b.addEventListener('click', () => { $('#dialog').hidden = true; if (onClick) onClick(); });
+    $('#dialog-buttons').appendChild(b);
+  });
+  $('#dialog').hidden = false;
+}
+
+function chooseTarget(card) {
+  const i = state.current;
+  const ok = attackTargets(i, card);
+  const others = state.players.map((t, k) => k).filter((k) => k !== i);
+  dialog(`Qui attaques-tu avec <b>${ACTIONS[card].name}</b> ?`, `<div class="dialog-card">${actionIcon(card)}</div>`, [
+    ...others.map((k) => {
+      const t = state.players[k];
+      const why = ok.includes(k) ? '' : has(t, ACTIONS[card].safety) ? ' (protégé par sa botte)'
+        : card === 'limit' ? ' (déjà limité)' : ' (ne roule pas)';
+      return { label: `<span class="dot" style="background:${t.color}"></span>${escapeHtml(t.name)}<small>${why}</small>`,
+        cls: 'target-btn', disabled: !ok.includes(k), onClick: () => playAction(card, k) };
+    }),
+    { label: 'Annuler', cls: 'cancel-btn' },
+  ]);
+  say('Qui attaques-tu ?');
+}
+
+// Coup fourré : la victime peut poser tout de suite la botte qui la protège, puis rejoue
+function askCoupFourre(i, target, card) {
+  const t = state.players[target];
+  const safety = ACTIONS[card].safety;
+  const next = () => {
+    giveTurn((i + 1) % state.players.length);
+    sfx.turn();
+    setTimeout(() => announceTurn(), 600);
+  };
+  setTimeout(() => {
+    dialog(`Coup fourré ?`,
+      `<div class="dialog-card">${actionIcon(safety)}</div>
+       <p class="dialog-text"><b>${escapeHtml(t.name)}</b>, as-tu la botte <b>${ACTIONS[safety].name}</b> dans ta main ?
+       Si oui, pose-la tout de suite et crie « Coup fourré ! »</p>`, [
+        { label: '⭐ Oui, coup fourré !', cls: 'go', onClick: () => {
+          state.log.push({ player: target, card: safety, cf: true, source: 'tap' });
+          recomputeKm();
+          sfx.win(); flash(); confetti();
+          state.current = target;
+          state.phase = 'draw';
+          cardTab = autoTab(target);
+          save();
+          renderRace();
+          say(`Coup fourré ! ${t.name} est protégé et rejoue. Pioche une carte !`);
+        } },
+        { label: 'Non, on continue', onClick: next },
+      ]);
+    say(`${t.name}, as-tu la botte ${ACTIONS[safety].name} ? Coup fourré ?`);
+  }, 1300);
+}
+
 function finish(i) {
   renderRace();
   $('#turn-banner').innerHTML = `<span class="turn-text"><b>${escapeHtml(state.players[i].name)}</b> passe la ligne !</span>`;
@@ -621,12 +842,104 @@ function finish(i) {
   setTimeout(() => showWinner(i), 1600);
 }
 
+/* ---------- Règles : état de chaque voiture ---------- */
+
+const fullRules = () => state.rules !== 'km';
+const has = (p, safety) => (p.safeties || []).includes(safety);
+const HAZARD_WORDS = { red: 'arrêté au feu rouge', fuel: 'en panne d\'essence', flat: 'crevé', accident: 'accidenté' };
+
+// Peut-il avancer ? (sans feu vert au départ ou après une réparation, on est arrêté)
+function rolling(p) {
+  if (!fullRules()) return true;
+  if (ACTIONS[p.battle] && ACTIONS[p.battle].kind === 'hazard') return false;
+  return has(p, 'priority') || p.battle === 'green';
+}
+
+// La carte qu'il lui faut pour repartir (ou null s'il roule)
+function needed(p) {
+  if (rolling(p)) return null;
+  if (ACTIONS[p.battle] && ACTIONS[p.battle].kind === 'hazard') return ACTIONS[p.battle].fix;
+  return 'green';
+}
+
+function whyStopped(p) {
+  if (p.battle === 'none') return 'Pour démarrer, il te faut d\'abord un Feu vert.';
+  if (p.battle === 'fixed') return 'C\'est réparé ! Il te faut maintenant un Feu vert pour repartir.';
+  const fix = ACTIONS[ACTIONS[p.battle].fix].name;
+  return `Tu es ${HAZARD_WORDS[p.battle]} : il te faut d'abord ${fix === 'Essence' ? 'de l\'Essence' : `la carte ${fix}`}.`;
+}
+
+// Pilotes que l'on peut attaquer avec cette carte
+function attackTargets(i, card) {
+  const a = ACTIONS[card];
+  return state.players.map((t, k) => ({ t, k })).filter(({ t, k }) => {
+    if (k === i || t.km >= state.goal || has(t, a.safety)) return false;
+    if (card === 'limit') return !t.limited;
+    return rolling(t);
+  }).map(({ k }) => k);
+}
+
+// Le pilote i peut-il jouer cette carte ? → { ok, reason }
+function canPlay(i, card) {
+  const p = state.players[i];
+  if (typeof card === 'number') {
+    const left = state.goal - p.km;
+    if (fullRules() && !rolling(p)) return { ok: false, reason: whyStopped(p) };
+    if (fullRules() && p.limited && card > 50) return { ok: false, reason: 'Tu es limité à 50 : seulement les cartes 25 et 50.' };
+    if (fullRules() && card === 200 && p.n200 >= 2) return { ok: false, reason: 'Tu as déjà posé deux cartes 200 : c\'est le maximum.' };
+    if (card > left) return { ok: false, reason: `Trop loin : il te reste ${left} km, il faut arriver pile.` };
+    return { ok: true, reason: `Oui ! Tu avances de ${card} km.` };
+  }
+  const a = ACTIONS[card];
+  if (a.kind === 'safety') {
+    if (has(p, card)) return { ok: false, reason: 'Tu as déjà cette botte.' };
+    return { ok: true, reason: 'Oui ! Une botte se pose quand tu veux, elle te protège pour toute la partie, et tu rejoues.' };
+  }
+  if (a.kind === 'hazard') {
+    const targets = attackTargets(i, card);
+    if (!targets.length) {
+      return { ok: false, reason: card === 'limit'
+        ? 'Personne ne peut recevoir cette limitation : ils sont déjà limités ou protégés.'
+        : 'Personne ne peut recevoir cette attaque : il faut attaquer un pilote qui roule et qui n\'a pas la botte.' };
+    }
+    return { ok: true, reason: `Oui ! Tu peux attaquer ${targets.map((k) => state.players[k].name).join(' ou ')}.` };
+  }
+  // Parades
+  if (card === 'end') return p.limited ? { ok: true, reason: 'Oui ! Fini la limitation, tu peux rouler vite.' } : { ok: false, reason: 'Tu n\'es pas limité : garde cette carte pour plus tard.' };
+  if (card === 'green') {
+    if (has(p, 'priority')) return { ok: false, reason: 'Pas besoin : avec le Véhicule prioritaire, tu roules sans feu vert.' };
+    if (p.battle === 'green') return { ok: false, reason: 'Tu roules déjà : garde ton feu vert pour plus tard.' };
+    if (['fuel', 'flat', 'accident'].includes(p.battle)) return { ok: false, reason: whyStopped(p) };
+    return { ok: true, reason: 'Oui ! Feu vert : tu peux rouler.' };
+  }
+  if (p.battle === a.cures) return { ok: true, reason: `Oui ! ${a.name} : c'est réparé. Ensuite il te faudra un Feu vert.` };
+  return { ok: false, reason: `Tu n'en as pas besoin : tu n'es pas ${HAZARD_WORDS[a.cures]}. Garde cette carte.` };
+}
+
 /* ---------- Historique : correction des coups ---------- */
 
-// Les km de chaque pilote sont la somme de ses coups dans l'historique
+// L'état de chaque pilote est rejoué à partir de l'historique des coups
 function recomputeKm() {
-  state.players.forEach((p) => { p.km = 0; });
-  state.log.forEach((e) => { state.players[e.player].km += e.km; });
+  state.players.forEach((p) => { p.km = 0; p.n200 = 0; p.battle = 'none'; p.before = 'none'; p.limited = false; p.safeties = []; });
+  state.log.forEach((e) => {
+    const p = state.players[e.player];
+    const a = ACTIONS[e.card];
+    if (!a) { p.km += e.km; if (e.km === 200) p.n200 += 1; return; }
+    if (a.kind === 'hazard') {
+      const t = state.players[e.target];
+      if (e.card === 'limit') t.limited = true; else { t.before = t.battle; t.battle = e.card; }
+    } else if (a.kind === 'remedy') {
+      if (e.card === 'green') p.battle = 'green';
+      else if (e.card === 'end') p.limited = false;
+      else if (p.battle === a.cures) p.battle = 'fixed';
+    } else {
+      p.safeties.push(e.card);
+      if (a.protects.includes('limit')) p.limited = false;
+      // Coup fourré : l'attaque est annulée, la voiture continue comme avant ;
+      // sinon l'attaque est réparée mais il faut un feu vert (sauf Véhicule prioritaire)
+      if (a.protects.includes(p.battle)) p.battle = e.cf ? p.before : 'fixed';
+    }
+  });
 }
 
 function renderLog() {
@@ -635,7 +948,13 @@ function renderLog() {
     list.innerHTML = '<li class="log-empty">Aucun coup pour l\'instant.</li>';
     return;
   }
-  list.innerHTML = state.log.map((e, n) => ({ e, n })).reverse().map(({ e, n }) => `
+  list.innerHTML = state.log.map((e, n) => ({ e, n })).reverse().map(({ e, n }) => (ACTIONS[e.card] ? `
+    <li class="log-row log-action" style="--car:${state.players[e.player].color}">
+      <span class="log-icon">${ACTIONS[e.card].kind === 'hazard' ? '⚔️' : ACTIONS[e.card].kind === 'remedy' ? '🔧' : '⭐'}</span>
+      <span class="log-text">${escapeHtml(state.players[e.player].name)} : ${ACTIONS[e.card].name}${
+        ACTIONS[e.card].kind === 'hazard' ? ` → ${escapeHtml(state.players[e.target].name)}` : ''}${e.cf ? ' — coup fourré !' : ''}</span>
+      <button class="log-del" data-entry="${n}" aria-label="Supprimer ce coup">✖</button>
+    </li>` : `
     <li class="log-row" style="--car:${state.players[e.player].color}">
       <span class="log-icon" title="${e.source === 'voice' ? 'Entendu' : 'Touché'}">${e.source === 'voice' ? '🎤' : '👆'}</span>
       <select class="log-player" data-entry="${n}" aria-label="Pilote">
@@ -646,7 +965,7 @@ function renderLog() {
       </select>
       <button class="log-del" data-entry="${n}" aria-label="Supprimer ce coup">✖</button>
       ${e.heard ? `<span class="log-heard">« ${escapeHtml(e.heard)} »</span>` : ''}
-    </li>`).join('');
+    </li>`)).join('');
 }
 
 // Modifie l'historique ; refuse si un pilote dépasserait l'arrivée
@@ -736,6 +1055,7 @@ function flash() {
 function giveTurn(i) {
   state.current = i;
   state.phase = 'draw';
+  cardTab = autoTab(i);
   save();
   renderRace();
 }
@@ -746,8 +1066,65 @@ function select(i) {
 }
 
 $('#cards').addEventListener('click', (e) => {
-  const b = e.target.closest('.card'); if (!b || b.disabled) return;
-  addKm(Number(b.dataset.km));
+  const b = e.target.closest('.card'); if (!b) return;
+  const card = b.dataset.km ? Number(b.dataset.km) : b.dataset.card;
+  const check = canPlay(state.current, card);
+  if (!check.ok) { explain(check.reason); return; }
+  if (typeof card === 'number') addKm(card); else playAction(card);
+});
+
+$('#card-tabs').addEventListener('click', (e) => {
+  const b = e.target.closest('.card-tab'); if (!b) return;
+  cardTab = b.dataset.tab;
+  sfx.click();
+  renderRace();
+});
+
+/* ---------- « Puis-je jouer cette carte ? » ---------- */
+
+function openAsk() {
+  const cur = state.players[state.current];
+  $('#ask-title').innerHTML = `${escapeHtml(cur.name)}, quelle carte as-tu dans la main ?`;
+  $('#ask-verdict').hidden = true;
+  const groups = fullRules() ? Object.keys(KINDS) : ['km'];
+  $('#ask-grid').innerHTML = groups.map((k) => `
+    <h3 class="ask-group" style="--card:${KINDS[k].color}">${KINDS[k].title}</h3>
+    <div class="ask-cards ${k === 'safety' ? 'cards-4' : ''}">
+      ${k === 'km' ? CARDS.map((c) => kmCardHtml(c, false)).join('') : actionsOf(k).map((id) => actionCardHtml(id, false)).join('')}
+    </div>`).join('');
+  $('#ask').hidden = false;
+  say('Montre-moi ta carte !');
+}
+
+function judge(card) {
+  const i = state.current;
+  const check = canPlay(i, card);
+  const name = typeof card === 'number' ? `${card} km` : ACTIONS[card].name;
+  const icon = typeof card === 'number' ? borneSvg(card, 'KM') : actionIcon(card);
+  const v = $('#ask-verdict');
+  v.className = `ask-verdict ${check.ok ? 'ok' : 'no'}`;
+  v.innerHTML = `
+    <div class="ask-card-icon">${icon}</div>
+    <div class="ask-text"><b>${check.ok ? '✅ Oui' : '❌ Pas maintenant'}</b> — ${escapeHtml(name)}<br>${escapeHtml(check.reason)}</div>
+    ${check.ok ? '<button id="btn-ask-play" class="big-btn go">Jouer cette carte</button>' : ''}`;
+  v.hidden = false;
+  v.scrollIntoView({ block: 'nearest' });
+  if (check.ok) sfx.click(); else sfx.nope();
+  say(check.reason);
+  const play = $('#btn-ask-play');
+  if (play) play.addEventListener('click', () => {
+    $('#ask').hidden = true;
+    state.phase = 'play';
+    if (typeof card === 'number') addKm(card); else playAction(card);
+  });
+}
+
+$('#btn-ask').addEventListener('click', openAsk);
+$('#btn-ask-close').addEventListener('click', () => { $('#ask').hidden = true; });
+$('#ask').addEventListener('click', (e) => {
+  if (e.target.id === 'ask') { $('#ask').hidden = true; return; }
+  const b = e.target.closest('#ask-grid .card'); if (!b) return;
+  judge(b.dataset.km ? Number(b.dataset.km) : b.dataset.card);
 });
 
 $('#road').addEventListener('click', (e) => {
@@ -873,8 +1250,8 @@ function confetti() {
 }
 
 $('#btn-rematch').addEventListener('click', () => {
-  state.players.forEach((p) => { p.km = 0; });
   state.current = 0; state.log = [];
+  recomputeKm();
   startRace();
 });
 
@@ -1072,11 +1449,11 @@ function handleHeard(alternatives) {
 function applyHeard(i, km, text) {
   if (state.players.some((p) => p.km >= state.goal)) return;
   const p = state.players[i];
-  const left = state.goal - p.km;
-  if (km > left) {
+  const check = canPlay(i, km);
+  if (!check.ok) {
     sfx.nope();
-    toast(`🎤 ${p.name} +${km} : impossible, il lui reste ${left} km.`);
-    say(`Attention, ${p.name} dépasserait l'arrivée. Il lui reste ${left} kilomètres.`);
+    toast(`🎤 ${p.name} +${km} : impossible. ${check.reason}`);
+    say(`Attention ${p.name} : ${check.reason}`);
     return;
   }
   addKm(km, i, { source: 'voice', heard: text });
@@ -1172,6 +1549,7 @@ $('#widgets').addEventListener('pointerdown', (e) => {
 
 renderSound();
 applyLayout();
+if (state.players.length) { recomputeKm(); cardTab = autoTab(state.current); }
 renderListen();
 if (state.screen === 'race' && state.players.length) { show('race'); renderRace(true); }
 else if (state.screen === 'win' && state.players.length) { show('win'); renderWinner(); }
