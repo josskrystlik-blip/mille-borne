@@ -19,8 +19,11 @@ avec une jauge jusqu'au drapeau. Sous les cartes, un tableau des positions (P1, 
    La voiture avance jusqu'à la bonne borne et c'est au pilote suivant.
    S'il n'a pas de km à poser (attaque, parade…), on appuie sur **Pas de km ▶**.
    On peut aussi toucher la voie ou la ligne d'un pilote dans le tableau pour lui donner la main.
-6. **↩ Annuler** retire le dernier ajout en cas d'erreur.
-7. Comme dans le vrai jeu, il faut arriver **pile** à l'objectif : les cartes trop grandes sont grisées.
+6. **💡 Comment finir ?** À partir de 200 km de l'arrivée, le compteur « Il reste » devient un
+   bouton : en le touchant, l'enfant voit (et entend) les combinaisons de cartes qui permettent
+   d'arriver pile, par exemple 100 + 75 + 25.
+7. **↩ Annuler** retire le dernier ajout en cas d'erreur.
+8. Comme dans le vrai jeu, il faut arriver **pile** à l'objectif : les cartes trop grandes sont grisées.
 
 La partie est sauvegardée dans le navigateur : on peut recharger la page sans rien perdre.
 Le bouton 🔊 coupe le son et la voix, ⏏ revient au menu.

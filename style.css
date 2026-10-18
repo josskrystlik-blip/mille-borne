@@ -319,7 +319,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 16px; }
 /* ---------- Commandes ---------- */
 
 .controls {
-  margin-top: 14px; padding: 12px;
+  margin-bottom: 14px; padding: 12px;
   background: linear-gradient(180deg, rgba(29, 61, 107, .98), rgba(19, 41, 75, .99));
   border: 3px solid var(--yellow); border-radius: var(--radius);
   box-shadow: 0 6px 0 rgba(10, 24, 48, .6);
@@ -349,6 +349,48 @@ main { max-width: 1100px; margin: 0 auto; padding: 16px; }
   text-shadow: 3px 3px 0 var(--red);
 }
 .left-unit { font-size: 18px; color: var(--yellow); font-weight: 700; }
+/* Le compteur devient un bouton d'aide près de l'arrivée */
+button.turn-left {
+  font: inherit; color: inherit; cursor: pointer;
+  background: rgba(255, 211, 26, .14); border: 3px solid var(--yellow); border-radius: 12px;
+  padding: 6px 10px; animation: glow 1.4s ease-in-out infinite;
+}
+button.turn-left:active { transform: scale(.96); }
+.help-badge {
+  margin-top: 4px; padding: 3px 8px; border-radius: 20px;
+  background: var(--yellow); color: var(--navy);
+  font-size: 13px; font-weight: 800; white-space: nowrap;
+}
+
+/* Fenêtre d'aide : combinaisons de cartes */
+.help-overlay { padding: 16px; }
+.help-panel {
+  width: min(560px, 100%); max-height: 100%; overflow-y: auto;
+  background: var(--navy); border: 4px solid var(--yellow); border-radius: 16px;
+  padding: 16px; box-shadow: 0 10px 40px rgba(0, 0, 0, .6);
+  animation: enter .4s cubic-bezier(.3, 1.5, .5, 1);
+}
+.help-title {
+  margin: 0 0 14px; text-align: center; color: #fff;
+  font-family: 'Racing Sans One', Impact, sans-serif; font-weight: 400; font-style: italic; font-size: 24px;
+}
+.help-title b { color: var(--yellow); text-shadow: 2px 2px 0 var(--red); font-weight: 400; }
+.help-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.help-row {
+  display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px;
+  padding: 8px; border-radius: 12px; background: var(--navy-2);
+  animation: enter .4s cubic-bezier(.3, 1.5, .5, 1) both;
+}
+.mini-card {
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 54px; height: 76px; padding: 4px;
+  background: #fbf8f1; border-radius: 7px; border: 1px solid #000;
+  box-shadow: inset 0 0 0 3px #fbf8f1, inset 0 0 0 5px var(--card), 0 3px 0 #000;
+}
+.mini-card .borne-svg { width: 30px; }
+.mini-animal { font-size: 18px; line-height: 1.1; }
+.help-plus { font-family: 'Russo One', sans-serif; font-size: 24px; color: var(--yellow); }
+.help-eq { font-family: 'Russo One', sans-serif; font-size: 22px; color: #fff; margin-left: 6px; white-space: nowrap; }
 .gauge {
   grid-column: 1 / -1; position: relative;
   height: 18px; border-radius: 9px; background: #2c4f82; border: 2px solid #000;
@@ -489,6 +531,10 @@ main { max-width: 1100px; margin: 0 auto; padding: 16px; }
   60% { transform: rotate(1deg); }
   100% { transform: rotate(0); }
 }
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 211, 26, .7); }
+  50% { box-shadow: 0 0 0 8px rgba(255, 211, 26, 0); }
+}
 @keyframes pick {
   0%, 25% { transform: translate(0, 0) rotate(0); }
   50% { transform: translate(34px, -46px) rotate(14deg); }
@@ -580,6 +626,14 @@ main { max-width: 1100px; margin: 0 auto; padding: 16px; }
   .left-num { font-size: 40px; }
   .left-unit { font-size: 14px; }
   .gauge { height: 14px; }
+  .help-badge { font-size: 10px; padding: 2px 6px; }
+  button.turn-left { padding: 4px 6px; }
+  .help-title { font-size: 19px; }
+  .mini-card { width: 44px; height: 62px; }
+  .mini-card .borne-svg { width: 24px; }
+  .mini-animal { font-size: 14px; }
+  .help-plus { font-size: 18px; }
+  .help-eq { font-size: 17px; }
   .draw-zone { gap: 18px; padding: 8px 4px 14px; }
   .deck { width: 80px; height: 112px; margin-top: 24px; }
   .deck-hand { font-size: 30px; right: -14px; }

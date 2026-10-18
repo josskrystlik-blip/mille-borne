@@ -22,6 +22,11 @@ const CARDS = [
   { km: 200, emoji: '🐦', name: 'Hirondelle', color: '#e0451b' },
 ];
 
+// L'aide « comment finir » n'apparaît qu'à partir de 200 km de l'arrivée
+const HELP_FROM = 200;
+const HELP_MAX_CARDS = 4;
+const HELP_MAX_COMBOS = 6;
+
 const STORAGE_KEY = 'mille-bornes-turbo-v1';
 
 /* ---------- État ---------- */
@@ -165,7 +170,10 @@ function say(text) {
 
 function announceTurn() {
   const p = state.players[state.current];
-  if (p && state.screen === 'race') say(`C'est au tour de ${p.name} ! Pioche une carte.`);
+  if (!p || state.screen !== 'race') return;
+  const left = state.goal - p.km;
+  const hint = left <= HELP_FROM ? ` Plus que ${left} kilomètres !` : '';
+  say(`C'est au tour de ${p.name} ! Pioche une carte.${hint}`);
 }
 
 const sfx = {
@@ -306,11 +314,14 @@ function renderRace(initial = false) {
     lane.style.setProperty('--p', progress);
     lane.classList.toggle('active', i === state.current);
     lane.classList.toggle('done', p.km >= goal);
-    // L'étiquette du prénom passe devant la voiture tant qu'il n'y a pas la place derrière
-    lane.classList.toggle('tag-front', progress < 0.25);
-    lane.querySelector('.tag').innerHTML = p.km >= goal
+    const tag = lane.querySelector('.tag');
+    tag.innerHTML = p.km >= goal
       ? `${escapeHtml(p.name)} 🏁`
       : `${escapeHtml(p.name)} <em>· reste ${goal - p.km}</em>`;
+    // L'étiquette passe devant la voiture tant qu'il n'y a pas la place derrière
+    const car = lane.querySelector('.car');
+    const room = (lane.clientWidth - car.offsetWidth - 14) * progress;
+    lane.classList.toggle('tag-front', room < tag.offsetWidth + 8);
   });
 
   // Le tableau est trié par position, le premier en haut
@@ -336,11 +347,18 @@ function renderRace(initial = false) {
       <span class="turn-car">${carSvg(cur.color, cur.number)}</span>
       <span class="turn-text">À toi,<br><b>${escapeHtml(cur.name)}</b> !</span>
     </div>
+    ${remaining <= HELP_FROM ? `
+    <button class="turn-left help" aria-label="Voir les cartes pour finir">
+      <span class="left-label">Il reste</span>
+      <span class="left-num">${remaining}</span>
+      <span class="left-unit">km</span>
+      <span class="help-badge">💡 Comment finir ?</span>
+    </button>` : `
     <div class="turn-left">
       <span class="left-label">Il reste</span>
       <span class="left-num">${remaining}</span>
       <span class="left-unit">km</span>
-    </div>
+    </div>`}
     <div class="gauge" aria-hidden="true">
       <div class="gauge-fill" style="width:${(cur.km / goal) * 100}%"></div>
       <span class="gauge-flag">🏁</span>
@@ -463,6 +481,56 @@ $('#btn-undo').addEventListener('click', () => {
   state.phase = 'play';
   sfx.undo(); save(); renderRace();
 });
+
+/* ---------- Aide : comment arriver pile ---------- */
+
+// Toutes les façons d'atteindre exactement `left` km avec les cartes étape,
+// de la plus courte à la plus longue (cartes rangées de la plus grande à la plus petite)
+function combos(left) {
+  const values = CARDS.map((c) => c.km).sort((a, b) => b - a);
+  const found = [];
+  (function walk(rest, from, hand) {
+    if (rest === 0) { found.push(hand); return; }
+    if (hand.length === HELP_MAX_CARDS) return;
+    values.slice(from).forEach((v, k) => {
+      if (v <= rest) walk(rest - v, from + k, [...hand, v]);
+    });
+  })(left, 0, []);
+  return found.sort((a, b) => a.length - b.length).slice(0, HELP_MAX_COMBOS);
+}
+
+function miniCard(km) {
+  const c = CARDS.find((x) => x.km === km);
+  return `<span class="mini-card" style="--card:${c.color}">${borneSvg(km, 'KM')}<span class="mini-animal">${c.emoji}</span></span>`;
+}
+
+function showHelp() {
+  const p = state.players[state.current];
+  const left = state.goal - p.km;
+  if (left <= 0 || left > HELP_FROM) return;
+  const list = combos(left);
+  $('#help-title').innerHTML = `Pour arriver pile, il te faut <b>${left} km</b>`;
+  $('#help-list').innerHTML = list.map((hand, n) => `
+    <div class="help-row" style="animation-delay:${n * 120}ms">
+      ${hand.map(miniCard).join('<span class="help-plus">+</span>')}
+      <span class="help-eq">= ${left} 🏁</span>
+    </div>`).join('');
+  $('#help').hidden = false;
+  sfx.click();
+  const spoken = list.slice(0, 3).map((hand) => hand.join(' plus ')).join(', ou ');
+  say(`Pour arriver pile, il te faut ${left} kilomètres. Par exemple : ${spoken}.`);
+}
+
+function hideHelp() {
+  $('#help').hidden = true;
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+}
+
+$('#turn-banner').addEventListener('click', (e) => {
+  if (e.target.closest('.turn-left.help')) showHelp();
+});
+$('#btn-help-close').addEventListener('click', hideHelp);
+$('#help').addEventListener('click', (e) => { if (e.target.id === 'help') hideHelp(); });
 
 /* ---------- Arrivée ---------- */
 

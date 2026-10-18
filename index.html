@@ -61,10 +61,6 @@
 
     <!-- Écran 2 : la course -->
     <section id="screen-race" class="screen" hidden>
-      <div class="track-panel">
-        <div id="road" class="road"></div>
-      </div>
-
       <div class="controls">
         <div id="turn-banner" class="turn-banner"></div>
 
@@ -93,6 +89,10 @@
           <button id="btn-undo" class="small-btn">↩ Annuler</button>
           <button id="btn-next" class="small-btn">Pas de km ▶</button>
         </div>
+      </div>
+
+      <div class="track-panel">
+        <div id="road" class="road"></div>
       </div>
 
       <div id="board" class="board"></div>
@@ -127,6 +127,15 @@
       <span class="light"></span><span class="light"></span><span class="light"></span>
     </div>
     <div id="countdown-text" class="countdown-text"></div>
+  </div>
+
+  <!-- Aide : combinaisons de cartes pour arriver pile -->
+  <div id="help" class="overlay help-overlay" hidden>
+    <div class="help-panel" role="dialog" aria-labelledby="help-title">
+      <h2 id="help-title" class="help-title"></h2>
+      <div id="help-list" class="help-list"></div>
+      <button id="btn-help-close" class="big-btn go">J'ai compris !</button>
+    </div>
   </div>
 
   <div id="flash" class="flash" aria-hidden="true"></div>
