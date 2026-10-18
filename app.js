@@ -151,6 +151,7 @@ const sfx = {
   go: () => tone(880, 0, 0.5, 'square', 0.12),
   undo: () => { tone(500, 0, 0.1, 'triangle'); tone(350, 0.1, 0.15, 'triangle'); },
   nope: () => { tone(200, 0, 0.15, 'square', 0.08); tone(150, 0.15, 0.2, 'square', 0.08); },
+  turn: () => { tone(784, 0.7, 0.12, 'triangle', 0.08); tone(1047, 0.82, 0.18, 'triangle', 0.08); },
   win: () => [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone(f, i * 0.15, 0.3, 'square', 0.1)),
 };
 
@@ -262,10 +263,13 @@ function buildRoad() {
       ${state.players.map((p, i) => `
         <div class="lane" data-index="${i}" style="--car:${p.color}">
           <div class="trail"></div>
+          <div class="remain"></div>
           <div class="car">${carSvg(p.color, p.number)}<span class="tag"></span><span class="bubble"></span></div>
         </div>`).join('')}
     </div>`;
 }
+
+let lastTurn = -1;
 
 function renderRace(initial = false) {
   const goal = state.goal;
@@ -280,8 +284,10 @@ function renderRace(initial = false) {
     lane.classList.toggle('active', i === state.current);
     lane.classList.toggle('done', p.km >= goal);
     // L'étiquette du prénom passe devant la voiture tant qu'il n'y a pas la place derrière
-    lane.classList.toggle('tag-front', progress < 0.18);
-    lane.querySelector('.tag').textContent = p.name;
+    lane.classList.toggle('tag-front', progress < 0.25);
+    lane.querySelector('.tag').innerHTML = p.km >= goal
+      ? `${escapeHtml(p.name)} 🏁`
+      : `${escapeHtml(p.name)} <em>· reste ${goal - p.km}</em>`;
   });
 
   // Le tableau est trié par position, le premier en haut
@@ -303,8 +309,24 @@ function renderRace(initial = false) {
   const banner = $('#turn-banner');
   banner.style.setProperty('--car', cur.color);
   banner.innerHTML = `
-    <span class="turn-car">${carSvg(cur.color, cur.number)}</span>
-    <span class="turn-text">Au tour de <b>${escapeHtml(cur.name)}</b></span>`;
+    <div class="turn-who">
+      <span class="turn-car">${carSvg(cur.color, cur.number)}</span>
+      <span class="turn-text">À toi,<br><b>${escapeHtml(cur.name)}</b> !</span>
+    </div>
+    <div class="turn-left">
+      <span class="left-label">Il reste</span>
+      <span class="left-num">${remaining}</span>
+      <span class="left-unit">km</span>
+    </div>
+    <div class="gauge" aria-hidden="true">
+      <div class="gauge-fill" style="width:${(cur.km / goal) * 100}%"></div>
+      <span class="gauge-flag">🏁</span>
+    </div>`;
+  // Petite animation quand c'est au tour d'un autre pilote
+  if (lastTurn !== state.current) {
+    banner.classList.remove('enter'); void banner.offsetWidth; banner.classList.add('enter');
+    lastTurn = state.current;
+  }
 
   $('#cards').innerHTML = CARDS.map((c) => `
     <button class="card" data-km="${c.km}" style="--card:${c.color}" ${c.km > remaining ? 'disabled' : ''}
@@ -347,6 +369,7 @@ function addKm(km) {
   state.current = (i + 1) % state.players.length;
   save();
   renderRace();
+  sfx.turn();
 }
 
 function smoke(lane, car) {

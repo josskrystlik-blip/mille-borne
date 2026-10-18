@@ -3,7 +3,8 @@
 Un compteur de kilomètres ludique pour jouer au **Mille Bornes** avec les enfants.
 Toutes les voitures font la course sur la même route, une voie par pilote, de borne en borne
 jusqu'à la ligne d'arrivée : on *voit* qui est devant et de combien, au lieu de faire des additions.
-Un tableau des positions (P1, P2…) donne les km de chacun et ce qu'il reste à parcourir.
+Un grand cartouche « À toi, Léo ! » indique à qui c'est le tour et combien de km il lui reste,
+avec une jauge jusqu'au drapeau. Sous les cartes, un tableau des positions (P1, P2…) donne les km de chacun.
 
 ## Comment jouer
 
