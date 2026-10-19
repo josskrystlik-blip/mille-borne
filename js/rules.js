@@ -12,6 +12,8 @@ const fullRules = () => state.rules !== 'km';
 // pas de limite de deux cartes 200
 const discovery = () => state.rules === 'discovery';
 const has = (p, safety) => (p.safeties || []).includes(safety);
+// Il n'y a qu'un exemplaire de chaque botte : indice du pilote qui l'a posée, sinon -1
+const safetyOwner = (safety) => state.players.findIndex((p) => has(p, safety));
 const HAZARD_WORDS = { red: 'arrêté au feu rouge', fuel: 'en panne d\'essence', flat: 'crevé', accident: 'accidenté' };
 
 // Peut-il avancer ? (sans feu vert au départ ou après une réparation, on est arrêté)
@@ -59,6 +61,8 @@ function canPlay(i, card) {
   const a = ACTIONS[card];
   if (a.kind === 'safety') {
     if (has(p, card)) return { ok: false, reason: 'Tu as déjà cette botte.' };
+    const owner = safetyOwner(card);
+    if (owner >= 0) return { ok: false, reason: `Impossible : il n'y a qu'une carte ${a.name} dans le jeu, et ${state.players[owner].name} l'a déjà posée.` };
     return { ok: true, reason: 'Oui ! Une botte se pose quand tu veux, elle te protège pour toute la partie, et tu rejoues.' };
   }
   if (a.kind === 'hazard') {
@@ -106,6 +110,8 @@ function recomputeKm() {
       if (e.card === 'green') p.battle = 'green';
       else if (p.battle === a.cures) p.battle = 'fixed';
     } else {
+      // Botte déjà posée par quelqu'un (historique corrigé à la main) : on garde la première
+      if (state.players.some((q) => has(q, e.card))) return;
       p.safeties.push(e.card);
       p.safetyCards.push({ card: e.card, cf: !!e.cf });
       // Coup fourré : la carte d'attaque est mise de côté, elle ne reste pas sur la pile

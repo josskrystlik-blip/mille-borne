@@ -354,6 +354,8 @@ function askCoupFourre(i, target, card) {
     sfx.turn();
     setTimeout(() => announceTurn(), 600);
   };
+  // La seule carte qui permettrait le coup fourré est déjà posée : pas de question
+  if (safetyOwner(safety) >= 0) { setTimeout(next, 1300); return; }
   setTimeout(() => {
     dialog(`Coup fourré ?`,
       `<div class="dialog-card">${actFace(safety)}</div>

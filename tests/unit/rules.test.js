@@ -106,3 +106,14 @@ test('combinaisons pour finir : les plus courtes d\'abord', () => {
   assert.deepEqual(plain(g.combos(25)), [[25]]);
   assert.deepEqual(plain(g.combos(0)), [[]]);
 });
+
+test('une seule botte de chaque dans le jeu', () => {
+  g.newGame({ log: [card(0, 'ace')] });
+  assert.equal(g.canPlay(0, 'ace').ok, false);
+  const other = g.canPlay(1, 'ace');
+  assert.equal(other.ok, false);
+  assert.match(other.reason, /qu'une carte As du volant.*Léo/);
+  assert.equal(g.canPlay(1, 'tank').ok, true, 'les autres bottes restent libres');
+  const s = g.newGame({ log: [card(0, 'ace'), card(1, 'ace')] });
+  assert.deepEqual(plain(s.players[1].safeties), [], 'un doublon dans l\'historique est ignoré');
+});

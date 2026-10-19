@@ -50,6 +50,19 @@ module.exports = async function rules(page) {
   assert.equal(s.players[0].battle, 'green', 'le coup fourré annule l\'attaque');
   assert.deepEqual(s.players[0].safetyCards, [{ card: 'puncture', cf: true }]);
   assert.equal(await turnName(page), 'Léo', 'après un coup fourré, c\'est à lui de jouer');
+
+  // L'unique Increvable est chez Léo : sa crevaison sur Papa ne propose pas de coup fourré
+  await playCard(page, 'flat', 'hazard');
+  await page.waitForTimeout(300);
+  if (await page.isVisible('#dialog-buttons .target-btn')) await page.click('#dialog-buttons .target-btn:not([disabled])');
+  await page.waitForTimeout(2200);
+  assert.ok(await page.isHidden('#dialog'), 'pas de question « Coup fourré ? »');
+  assert.equal((await stateOf(page)).players[1].battle, 'flat');
+  assert.equal(await turnName(page), 'Papa');
+  // … et Papa ne peut pas poser d'Increvable
+  await page.click('#btn-play', { force: true });
+  await page.click('.card-tab[data-tab="safety"]');
+  assert.match(await page.getAttribute('#cards .card[data-card="puncture"]', 'class'), /blocked/);
 };
 
 async function attack(page, id) {
