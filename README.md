@@ -141,22 +141,26 @@ que si on l'avait touchée ; elle apparaît avec 📷 dans l'historique).
 - La caméra demande une adresse **https** (GitHub Pages convient). La fiabilité dépend de la
   lumière : à essayer, et on peut toujours toucher la carte à l'écran.
 
-## 🧒 Mode Enfant / 🧑‍🔧 Mode Parent
+## 🧒 Affichage : Enfant, Famille ou Adulte
 
-Pendant la course, le bouton 🧒 en haut à droite choisit l'écran :
-- **Mode Enfant** (par défaut) : seulement l'essentiel – Tour de jeu, Circuit, Cartes posées et
+On choisit l'affichage sur l'écran de départ (panneau **Affichage**) ou pendant la course avec le
+bouton en haut à droite :
+- **🧒 Enfant** (par défaut) : seulement l'essentiel – Tour de jeu, Circuit, Cartes posées et
   Positions. L'historique, 🎤 Écouter, 🏁 Fin de manche, ⏏ menu et les poignées des widgets sont
   cachés (rien ne bouge par erreur). 📷 n'apparaît que si des cartes ont été apprises.
-- **Mode Parent** : **garder le doigt appuyé 1 seconde** sur 🧒 (un anneau se remplit) ; tout
-  redevient visible. Un simple appui sur 🧑‍🔧 revient au mode Enfant.
-Si l'écoute vocale tourne, un petit voyant 🎤 reste allumé dans la barre du haut. Le mode est mémorisé.
+  Pour en sortir, **garder le doigt appuyé 1 seconde** sur 🧒 (un anneau se remplit).
+- **👨‍👩‍👧 Famille** : toutes les options, avec le look course « Route 66 ».
+- **🎩 Adulte** : toutes les options avec un **look sobre** : couleurs sombres et dorées,
+  typographie classique, sans décor ni voitures à yeux, animations discrètes. Les cartes gardent
+  l'apparence des vraies cartes.
+Si l'écoute vocale tourne, un petit voyant 🎤 reste allumé dans la barre du haut. Le choix est mémorisé.
 
 ## Écran de course en widgets
 
 L'écran est découpé en 5 widgets : **Tour de jeu**, **Circuit**, **Cartes posées**, **Positions** et **Historique**.
 - ▾ réduit un widget, ⤢ l'agrandit en plein écran (✕ pour revenir) ;
 - on fait **glisser sa barre de titre** pour changer l'ordre (par exemple le circuit en haut).
-La disposition est mémorisée (en mode Parent).
+La disposition est mémorisée (affichages Famille et Adulte).
 
 ## 🎤 Écouter la partie
 
@@ -219,7 +223,7 @@ Sur tablette, « Ajouter à l'écran d'accueil » permet de le lancer comme une 
   - `faces.js` – dessins des voitures et des cartes ; `audio.js` – sons, musique, voix ;
   - `track.js` – circuit et effets ; `race.js` – écran de course, aide, règles, commentateur ;
   - `listen.js` – écoute vocale ; `scan.js` – caméra ; `screens.js` – départ, arrivée, widgets,
-    mode Enfant/Parent et démarrage.
+    affichages Enfant/Famille/Adulte et démarrage.
 - `tests/` – les tests automatiques.
 
 ## Développement / tests
@@ -236,5 +240,5 @@ npm run test:e2e -- child voice   # seulement certains scénarios
 
 - `tests/unit/` charge `js/data.js` et `js/rules.js` sans navigateur (`node --test`).
 - `tests/e2e/` joue de vraies parties (pioche, attaques, coup fourré, voix et caméra simulées,
-  mode Enfant, arrivée et points) ; le lanceur démarre son propre petit serveur web.
+  affichages Enfant et Adulte, arrivée et points) ; le lanceur démarre son propre petit serveur web.
 - GitHub Actions lance les deux à chaque push (`.github/workflows/tests.yml`).

@@ -16,7 +16,7 @@ function defaultState() {
     voice: '',
     music: false,         // petite musique de course
     commentator: true,    // le commentateur de course
-    uiMode: 'child',  // 'child' : écran simplifié pour l'enfant ; 'parent' : toutes les options
+    uiMode: 'child',  // 'child' : écran simplifié ; 'family' : tout, look course ; 'adult' : tout, look sobre
     rules: 'full', // 'full' : attaques, parades et bottes ; 'km' : seulement les kilomètres
     layout: { order: [...WIDGETS], collapsed: {} },
     manches: [],      // points de chaque manche jouée : [[points du pilote 0, 1, …], …]
@@ -30,7 +30,10 @@ let state = load();
 function load() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (saved && Array.isArray(saved.setup)) return Object.assign(defaultState(), saved);
+    if (saved && Array.isArray(saved.setup)) {
+      if (saved.uiMode === 'parent') saved.uiMode = 'family'; // ancien nom du mode complet
+      return Object.assign(defaultState(), saved);
+    }
   } catch (e) { /* stockage indisponible */ }
   return defaultState();
 }

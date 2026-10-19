@@ -948,3 +948,75 @@ button.turn-left:active { transform: scale(.96); }
   body:not(.mode-child) .topbar:has(#btn-home:not([hidden])) .icon-btn { width: 34px; height: 34px; font-size: 15px; }
   .listen-dot { font-size: 14px; padding: 2px 4px; }
 }
+
+/* ---------- Affichage Adulte : look sobre ---------- */
+.display-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; text-transform: none; font-style: normal; }
+.display-btn small { font-family: 'Barlow', sans-serif; font-size: 14px; opacity: .85; letter-spacing: 0; }
+body.theme-adult {
+  --red: #a8443d;
+  --red-dark: #6e2a26;
+  --yellow: #c9a45c;
+  --orange: #c9a45c;
+  --navy: #1b2129;
+  --navy-2: #2a333f;
+  --muted: #98a3b1;
+  --panel: rgba(32, 39, 48, .97);
+  --panel-line: #3a4553;
+  --asphalt: #3b3e44;
+  --radius: 10px;
+  background: linear-gradient(180deg, #12161c 0%, #1e252e 100%) fixed;
+  background-color: #161b22;
+  font-weight: 500;
+}
+.theme-adult .scenery, .theme-adult .route66, .theme-adult .eyes, .theme-adult .lids { display: none; }
+.theme-adult .checker-strip { height: 1px; background: var(--panel-line); border: 0; }
+.theme-adult .topbar { background: #12161c; border-bottom: 1px solid var(--panel-line); }
+.theme-adult .logo-bolt path { fill: var(--yellow); stroke: none; }
+.theme-adult .logo-text {
+  background: none; color: #e9edf2; -webkit-text-stroke: 0; filter: none; letter-spacing: 3px;
+  text-transform: uppercase; font-size: .62em;
+}
+.theme-adult .icon-btn { border: 1px solid var(--panel-line); background: var(--navy-2); }
+.theme-adult :is(.panel h2, .logo, .big-btn, .count-btn, .countdown-text, .win-title, .win-kicker, .turn-text b,
+  .widget-title, .help-title, .help-title b, .goal-km, .board-km, .pos, .rank-km, .left-num) {
+  font-family: 'Barlow', 'Helvetica Neue', Arial, sans-serif; font-style: normal; text-shadow: none;
+  font-variant-numeric: tabular-nums;
+}
+.theme-adult :is(.ask-group, .rule-title, .draw-title, .play-title, .win-section) {
+  font-family: 'Barlow', 'Helvetica Neue', Arial, sans-serif; font-style: normal; font-weight: 700; text-shadow: none;
+}
+.theme-adult :is(.draw-title, .play-title) { font-size: 22px; color: #e9edf2; }
+.theme-adult :is(.panel h2, .widget-title, .help-title) { font-weight: 700; letter-spacing: .5px; }
+.theme-adult .panel h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); }
+.theme-adult :is(.goal-km, .board-km, .left-num, .count-btn, .turn-text b) { font-weight: 800; }
+.theme-adult :is(.panel, .widget, .help-panel) {
+  border: 1px solid var(--panel-line); box-shadow: 0 2px 12px rgba(0, 0, 0, .35); background: var(--panel);
+}
+.theme-adult .widget-bar { background: rgba(255, 255, 255, .03); border-bottom: 1px solid var(--panel-line); }
+.theme-adult .widget-title { font-size: 14px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); }
+.theme-adult .widget-grip { color: var(--muted); }
+.theme-adult :is(.big-btn, .small-btn, .count-btn, .goal-btn, .widget-btn) {
+  border-width: 1px; box-shadow: none; text-transform: none; font-style: normal; letter-spacing: .3px;
+}
+.theme-adult .big-btn { font-weight: 700; font-size: clamp(18px, 4.5vw, 22px); border-color: var(--panel-line); }
+.theme-adult .big-btn.go { background: var(--yellow); border-color: var(--yellow); color: #1b2129; text-shadow: none; box-shadow: none; }
+.theme-adult .big-btn:active { box-shadow: none; }
+.theme-adult :is(.count-btn.active, .goal-btn.active) { background: var(--yellow); border-color: var(--yellow); color: #1b2129; }
+.theme-adult .turn-banner { background: #161b22; border-width: 2px; box-shadow: none; }
+.theme-adult .turn-banner.enter { animation: none; }
+.theme-adult .turn-car { animation: none; }
+.theme-adult .turn-text b { font-size: 30px; color: #fff; letter-spacing: 0; }
+.theme-adult .left-num { font-size: 50px; }
+.theme-adult button.turn-left { animation: none; border-width: 1px; background: rgba(201, 164, 92, .1); }
+.theme-adult #btn-play { animation: none; }
+.theme-adult .track-panel { background: #20262e; border: 1px solid var(--panel-line); box-shadow: none; }
+.theme-adult .track-svg .grass { fill: #2c3b31; stroke: #3d4f42; }
+.theme-adult .track-svg .kerb { stroke: #7a3631; }
+.theme-adult .track-svg .kerb-base { stroke: #c9ccd1; }
+.theme-adult .track-svg .infield-text { stroke: #1d2a21; }
+.theme-adult .track-svg .infield path { fill: var(--yellow); stroke: none; }
+.theme-adult .track-svg .tag-text { fill: #e9edf2; }
+.theme-adult :is(.board-row.active, .zone.active) { box-shadow: 0 0 0 2px var(--yellow); }
+.theme-adult .commentary { font-style: normal; }
+.theme-adult .confetti { display: none; }
+.theme-adult .countdown-text { font-weight: 800; }

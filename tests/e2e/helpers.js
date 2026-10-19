@@ -46,17 +46,12 @@ async function openPage(browser, base, viewport) {
   return page;
 }
 
-// Prépare une partie depuis l'écran de départ. mode : 'child' (défaut du jeu) ou 'parent'.
-async function startGame(page, { names = ['Léo', 'Papa'], rules = 'full', mode = 'parent' } = {}) {
+// Prépare une partie depuis l'écran de départ. mode : 'child' (défaut du jeu), 'family' ou 'adult'.
+async function startGame(page, { names = ['Léo', 'Papa'], rules = 'full', mode = 'family' } = {}) {
   await page.click(`[data-count="${names.length}"]`);
   for (const [i, n] of names.entries()) await page.fill(`.name-input[data-index="${i}"]`, n);
   await page.click(`[data-rules="${rules}"]`);
-  if (mode === 'parent') {
-    await page.evaluate((key) => {
-      const s = JSON.parse(localStorage.getItem(key)); s.uiMode = 'parent'; localStorage.setItem(key, JSON.stringify(s));
-    }, STORAGE_KEY);
-    await page.reload();
-  }
+  await page.click(`[data-display="${mode}"]`);
   await page.click('#btn-start');
   await page.waitForSelector('#countdown', { state: 'hidden', timeout: 8000 });
 }

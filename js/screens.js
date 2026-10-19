@@ -33,8 +33,17 @@ function renderSetup() {
     <button class="goal-btn ${state.rules === id ? 'active' : ''}" data-rules="${id}">
       <span class="goal-km">${t}</span><span class="goal-sub">${sub}</span>
     </button>`).join('');
+  $('#display-buttons').innerHTML = DISPLAYS.map(([id, icon, t, sub]) => `
+    <button class="goal-btn ${state.uiMode === id ? 'active' : ''}" data-display="${id}">
+      <span class="goal-km">${icon} ${t}</span><span class="goal-sub">${sub}</span>
+    </button>`).join('');
   renderVoices();
 }
+
+$('#display-buttons').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-display]'); if (!b) return;
+  setMode(b.dataset.display); renderSetup();
+});
 
 $('#rules-buttons').addEventListener('click', (e) => {
   const b = e.target.closest('[data-rules]'); if (!b) return;
@@ -272,27 +281,43 @@ $('#btn-sound').addEventListener('click', () => {
   if (state.muted && 'speechSynthesis' in window) window.speechSynthesis.cancel();
 });
 
-/* ---------- Mode Enfant / Mode Parent ---------- */
+/* ---------- Affichage : Enfant, Famille, Adulte ---------- */
 
-const HOLD_MS = 1000; // appui long pour passer en mode Parent
+const DISPLAYS = [
+  ['child', '🧒', 'Enfant', 'L\'essentiel, gros boutons'],
+  ['family', '👨‍👩‍👧', 'Famille', 'Toutes les options'],
+  ['adult', '🎩', 'Adulte', 'Tout, look sobre'],
+];
+const HOLD_MS = 1000; // appui long pour quitter le mode Enfant
 let holdTimer = null;
 let holdDone = false;
 
 function renderMode(screen = state.screen) {
-  const child = state.uiMode !== 'parent';
+  const child = state.uiMode === 'child';
+  const display = DISPLAYS.find(([id]) => id === state.uiMode) || DISPLAYS[0];
   const b = $('#btn-mode');
   document.body.classList.toggle('mode-child', child && screen === 'race');
+  document.body.classList.toggle('theme-adult', state.uiMode === 'adult');
   let learned = false;
   try { learned = !!localStorage.getItem(SCAN_KEY); } catch (e) { /* stockage indisponible */ }
   document.body.classList.toggle('has-scan', learned);
-  b.textContent = child ? '🧒' : '🧑‍🔧';
-  b.setAttribute('aria-label', child ? 'Mode parent : garder le doigt appuyé' : 'Revenir au mode enfant');
-  if (child) document.querySelectorAll('.widget.expanded').forEach((w) => toggleExpand(w.dataset.widget));
+  b.textContent = display[1];
+  b.setAttribute('aria-label', child ? 'Changer d\'affichage : garder le doigt appuyé' : 'Changer d\'affichage');
+  if (child && screen === 'race') document.querySelectorAll('.widget.expanded').forEach((w) => toggleExpand(w.dataset.widget));
   refitTrack();
 }
 
 function setMode(mode) {
   state.uiMode = mode; save(); renderMode(); sfx.click();
+}
+
+function chooseDisplay() {
+  dialog('Affichage', '<p class="dialog-text">Choisis l\'écran qui convient aux joueurs.</p>',
+    DISPLAYS.map(([id, icon, t, sub]) => ({
+      label: `${icon} ${t}<small>${sub}</small>`,
+      cls: `display-btn ${state.uiMode === id ? 'go' : ''}`,
+      onClick: () => setMode(id),
+    })));
 }
 
 function cancelHold() {
@@ -302,17 +327,17 @@ function cancelHold() {
 
 $('#btn-mode').addEventListener('pointerdown', () => {
   holdDone = false;
-  if (state.uiMode === 'parent') return;
+  if (state.uiMode !== 'child') return;
   $('#btn-mode').classList.add('holding');
-  holdTimer = setTimeout(() => { cancelHold(); holdDone = true; setMode('parent'); toast('Mode parent : toutes les options sont visibles.'); }, HOLD_MS);
+  holdTimer = setTimeout(() => { cancelHold(); holdDone = true; chooseDisplay(); }, HOLD_MS);
 });
 ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => $('#btn-mode').addEventListener(ev, cancelHold));
 $('#btn-mode').addEventListener('contextmenu', (e) => e.preventDefault());
 
 $('#btn-mode').addEventListener('click', () => {
   if (holdDone) { holdDone = false; return; }
-  if (state.uiMode === 'parent') setMode('child');
-  else toast('Pour le mode parent, garde le doigt appuyé 1 seconde sur 🧒.');
+  if (state.uiMode !== 'child') chooseDisplay();
+  else toast('Pour changer d\'affichage, garde le doigt appuyé 1 seconde sur 🧒.');
 });
 
 /* ---------- Widgets : réduire, agrandir, déplacer ---------- */
