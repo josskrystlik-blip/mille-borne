@@ -914,3 +914,37 @@ button.turn-left:active { transform: scale(.96); }
   .light { width: 46px; height: 46px; }
   .win-panel .control-row { flex-direction: column; }
 }
+
+/* ---------- Mode Enfant : seulement l'essentiel ---------- */
+.mode-btn { position: relative; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+@property --hold { syntax: '<percentage>'; inherits: false; initial-value: 0%; }
+.mode-btn::after {
+  content: ''; position: absolute; inset: -6px; border-radius: 50%; pointer-events: none;
+  background: conic-gradient(var(--yellow) var(--hold), transparent 0);
+  -webkit-mask: radial-gradient(circle, transparent 58%, #000 60%); mask: radial-gradient(circle, transparent 58%, #000 60%);
+  opacity: 0;
+}
+.mode-btn.holding::after { opacity: 1; animation: hold-fill 1s linear forwards; }
+@keyframes hold-fill { from { --hold: 0%; } to { --hold: 100%; } }
+.listen-dot {
+  align-self: center; font-size: 18px; padding: 4px 6px; border-radius: 999px;
+  background: #c8102e; border: 2px solid var(--yellow); animation: light-blink 1.6s ease-in-out infinite;
+}
+.mode-child .widget[data-widget="log"],
+.mode-child .widget-grip,
+.mode-child .widget-btn,
+.mode-child #btn-listen,
+.mode-child #btn-end,
+.mode-child #btn-home,
+.mode-child:not(.has-scan) #btn-scan { display: none !important; }
+.mode-child .listen-row:not(:has(#listen-status:not(:empty))) { display: none; }
+.mode-child .widget.collapsed .widget-body { display: block; }
+.mode-child .widget-bar { cursor: default; }
+.mode-child .board { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); margin-top: 8px; }
+/* Téléphone : barre du haut plus serrée quand tous les boutons du mode Parent sont là */
+@media (max-width: 600px) {
+  body:not(.mode-child) .topbar:has(#btn-home:not([hidden])) .logo { font-size: 19px; }
+  body:not(.mode-child) .topbar:has(#btn-home:not([hidden])) .logo-bolt { width: 14px; }
+  body:not(.mode-child) .topbar:has(#btn-home:not([hidden])) .icon-btn { width: 34px; height: 34px; font-size: 15px; }
+  .listen-dot { font-size: 14px; padding: 2px 4px; }
+}

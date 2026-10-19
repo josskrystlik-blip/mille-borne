@@ -141,12 +141,22 @@ que si on l'avait touchée ; elle apparaît avec 📷 dans l'historique).
 - La caméra demande une adresse **https** (GitHub Pages convient). La fiabilité dépend de la
   lumière : à essayer, et on peut toujours toucher la carte à l'écran.
 
+## 🧒 Mode Enfant / 🧑‍🔧 Mode Parent
+
+Pendant la course, le bouton 🧒 en haut à droite choisit l'écran :
+- **Mode Enfant** (par défaut) : seulement l'essentiel – Tour de jeu, Circuit, Cartes posées et
+  Positions. L'historique, 🎤 Écouter, 🏁 Fin de manche, ⏏ menu et les poignées des widgets sont
+  cachés (rien ne bouge par erreur). 📷 n'apparaît que si des cartes ont été apprises.
+- **Mode Parent** : **garder le doigt appuyé 1 seconde** sur 🧒 (un anneau se remplit) ; tout
+  redevient visible. Un simple appui sur 🧑‍🔧 revient au mode Enfant.
+Si l'écoute vocale tourne, un petit voyant 🎤 reste allumé dans la barre du haut. Le mode est mémorisé.
+
 ## Écran de course en widgets
 
 L'écran est découpé en 5 widgets : **Tour de jeu**, **Circuit**, **Cartes posées**, **Positions** et **Historique**.
 - ▾ réduit un widget, ⤢ l'agrandit en plein écran (✕ pour revenir) ;
 - on fait **glisser sa barre de titre** pour changer l'ordre (par exemple le circuit en haut).
-La disposition est mémorisée.
+La disposition est mémorisée (en mode Parent).
 
 ## 🎤 Écouter la partie
 
@@ -201,5 +211,30 @@ Sur tablette, « Ajouter à l'écran d'accueil » permet de le lancer comme une 
 ## Fichiers
 
 - `index.html` – les trois écrans (préparation, course, arrivée)
-- `style.css` – le thème « course dans le désert »
-- `app.js` – la logique du jeu, les sons (synthétisés) et la sauvegarde
+- `style.css` – le thème « Route 66 »
+- `js/` – le jeu, découpé en scripts simples chargés dans l'ordre (le jeu marche aussi en
+  ouvrant `index.html` directement, sans serveur) :
+  - `data.js` – cartes, actions, couleurs ; `state.js` – état et sauvegarde ;
+  - `rules.js` – **la logique pure** (règles, combinaisons, points, phrases entendues) ;
+  - `faces.js` – dessins des voitures et des cartes ; `audio.js` – sons, musique, voix ;
+  - `track.js` – circuit et effets ; `race.js` – écran de course, aide, règles, commentateur ;
+  - `listen.js` – écoute vocale ; `scan.js` – caméra ; `screens.js` – départ, arrivée, widgets,
+    mode Enfant/Parent et démarrage.
+- `tests/` – les tests automatiques.
+
+## Développement / tests
+
+Il faut [Node.js](https://nodejs.org) 20 ou plus.
+
+```sh
+npm test            # tests unitaires : règles, coup fourré, combinaisons, points, phrases entendues
+npm install         # une fois, pour Playwright
+npx playwright install chromium
+npm run test:e2e    # scénarios complets dans un navigateur, sur téléphone et tablette
+npm run test:e2e -- child voice   # seulement certains scénarios
+```
+
+- `tests/unit/` charge `js/data.js` et `js/rules.js` sans navigateur (`node --test`).
+- `tests/e2e/` joue de vraies parties (pioche, attaques, coup fourré, voix et caméra simulées,
+  mode Enfant, arrivée et points) ; le lanceur démarre son propre petit serveur web.
+- GitHub Actions lance les deux à chaque push (`.github/workflows/tests.yml`).

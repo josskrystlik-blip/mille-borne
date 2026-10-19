@@ -32,6 +32,8 @@
       <span class="route66" aria-hidden="true"><span>ROUTE</span>66</span>
     </h1>
     <div class="topbar-actions">
+      <span id="listen-dot" class="listen-dot" title="L'écoute vocale est en marche" hidden>🎤</span>
+      <button id="btn-mode" class="icon-btn mode-btn" aria-label="Mode parent (appui long)" hidden>🧒</button>
       <button id="btn-rules" class="icon-btn" aria-label="Les règles en 1 minute">📖</button>
       <button id="btn-music" class="icon-btn off" aria-label="Mettre la musique">🎵</button>
       <button id="btn-sound" class="icon-btn" aria-label="Couper le son">🔊</button>
@@ -291,6 +293,16 @@
   <div id="flash" class="flash" aria-hidden="true"></div>
   <div id="confetti" class="confetti" aria-hidden="true"></div>
 
-  <script src="app.js"></script>
+  <!-- Scripts classiques chargés dans l'ordre (le jeu marche aussi en ouvrant index.html directement) -->
+  <script src="js/data.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/faces.js"></script>
+  <script src="js/rules.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/track.js"></script>
+  <script src="js/race.js"></script>
+  <script src="js/listen.js"></script>
+  <script src="js/scan.js"></script>
+  <script src="js/screens.js"></script>
 </body>
 </html>
