@@ -36,8 +36,20 @@ grand « V » vert pour les bottes ; le dos de la pioche aux petites bornes bleu
 ## Règles complètes : attaques, parades et bottes
 
 Sur l'écran de départ, **Règles** permet de choisir :
-- **Règles complètes** : le jeu suit l'état de chaque voiture ;
+- **Découverte** : pour les plus jeunes, les attaques, parades et bottes sont suivies mais
+  **pas besoin de feu vert** (ni au départ, ni après une réparation), **pas de coup fourré**
+  et **pas de limite** de cartes 200 ;
+- **Règles complètes** : comme le vrai jeu, le jeu suit l'état de chaque voiture ;
 - **Km seulement** : partie rapide, on ne compte que les kilomètres.
+
+### 📖 Les règles en 1 minute
+
+Le bouton **📖** (en haut, sur tous les écrans) et le lien de l'écran de départ ouvrent les règles
+illustrées avec les cartes du jeu : le but, le tour de jeu, les kilomètres, le feu vert, les
+attaques et leurs parades, les bottes et le coup fourré, la fin de partie, ce qui change en
+mode Découverte, et **les questions qui font débattre** (parade sans attaque, attaquer un pilote
+déjà arrêté, feu vert après réparation, deux cartes 200…). Chaque section a un bouton 🔊 qui la
+lit à voix haute pour les enfants.
 
 Avec les règles complètes, après **Jouer ▶** on choisit sa carte dans 4 onglets :
 **🛣️ Km**, **⚔️ Attaquer** (feu rouge, limitation, panne d'essence, crevaison, accident),

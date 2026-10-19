@@ -32,6 +32,7 @@
       <span class="route66" aria-hidden="true"><span>ROUTE</span>66</span>
     </h1>
     <div class="topbar-actions">
+      <button id="btn-rules" class="icon-btn" aria-label="Les règles en 1 minute">📖</button>
       <button id="btn-sound" class="icon-btn" aria-label="Couper le son">🔊</button>
       <button id="btn-home" class="icon-btn" aria-label="Retour au menu" hidden>⏏</button>
     </div>
@@ -58,7 +59,8 @@
 
       <div class="panel">
         <h2>Règles</h2>
-        <div id="rules-buttons" class="goal-buttons"></div>
+        <div id="rules-buttons" class="goal-buttons rules-3"></div>
+        <button id="btn-rules-setup" class="small-btn rules-link">📖 Les règles en 1 minute</button>
       </div>
 
       <div class="panel">
@@ -210,6 +212,16 @@
       <h2 id="help-title" class="help-title"></h2>
       <div id="help-list" class="help-list"></div>
       <button id="btn-help-close" class="big-btn go">J'ai compris !</button>
+    </div>
+  </div>
+
+  <!-- Les règles en 1 minute -->
+  <div id="rules" class="overlay help-overlay" hidden>
+    <div class="help-panel rules-panel" role="dialog" aria-labelledby="rules-title">
+      <h2 id="rules-title" class="help-title">Les règles en 1 minute</h2>
+      <p id="rules-mode" class="rules-mode"></p>
+      <div id="rules-body" class="rules-body"></div>
+      <button id="btn-rules-close" class="big-btn go">C'est parti !</button>
     </div>
   </div>
 

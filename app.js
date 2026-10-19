@@ -367,7 +367,11 @@ function renderSetup() {
       <span class="goal-km">${g} km</span>
       <span class="goal-sub">${g === 700 ? 'Course courte' : 'Course classique'}</span>
     </button>`).join('');
-  $('#rules-buttons').innerHTML = [['full', 'Règles complètes', 'Attaques, parades, bottes'], ['km', 'Km seulement', 'Partie rapide']].map(([id, t, sub]) => `
+  $('#rules-buttons').innerHTML = [
+    ['discovery', 'Découverte', 'Règles simplifiées'],
+    ['full', 'Règles complètes', 'Comme le vrai jeu'],
+    ['km', 'Km seulement', 'Partie rapide'],
+  ].map(([id, t, sub]) => `
     <button class="goal-btn ${state.rules === id ? 'active' : ''}" data-rules="${id}">
       <span class="goal-km">${t}</span><span class="goal-sub">${sub}</span>
     </button>`).join('');
@@ -875,7 +879,14 @@ function playAction(card, target, meta = {}) {
     sfx.nope();
     renderRace();
     say(`${p.name} met ${a.name} à ${t.name} !`);
-    askCoupFourre(i, target, card);
+    if (discovery()) {
+      // Pas de coup fourré en mode Découverte : on passe au pilote suivant
+      giveTurn((i + 1) % state.players.length);
+      sfx.turn();
+      setTimeout(() => announceTurn(), 1400);
+    } else {
+      askCoupFourre(i, target, card);
+    }
     return;
   }
   if (a.kind === 'safety') {
@@ -981,6 +992,9 @@ function finish(i) {
 /* ---------- Règles : état de chaque voiture ---------- */
 
 const fullRules = () => state.rules !== 'km';
+// Mode Découverte : pas de feu vert pour démarrer ni après une réparation, pas de coup fourré,
+// pas de limite de deux cartes 200
+const discovery = () => state.rules === 'discovery';
 const has = (p, safety) => (p.safeties || []).includes(safety);
 const HAZARD_WORDS = { red: 'arrêté au feu rouge', fuel: 'en panne d\'essence', flat: 'crevé', accident: 'accidenté' };
 
@@ -988,7 +1002,7 @@ const HAZARD_WORDS = { red: 'arrêté au feu rouge', fuel: 'en panne d\'essence'
 function rolling(p) {
   if (!fullRules()) return true;
   if (ACTIONS[p.battle] && ACTIONS[p.battle].kind === 'hazard') return false;
-  return has(p, 'priority') || p.battle === 'green';
+  return discovery() || has(p, 'priority') || p.battle === 'green';
 }
 
 // La carte qu'il lui faut pour repartir (ou null s'il roule)
@@ -1022,7 +1036,7 @@ function canPlay(i, card) {
     const left = state.goal - p.km;
     if (fullRules() && !rolling(p)) return { ok: false, reason: whyStopped(p) };
     if (fullRules() && p.limited && card > 50) return { ok: false, reason: 'Tu es limité à 50 : seulement les cartes 25 et 50.' };
-    if (fullRules() && card === 200 && p.n200 >= 2) return { ok: false, reason: 'Tu as déjà posé deux cartes 200 : c\'est le maximum.' };
+    if (fullRules() && !discovery() && card === 200 && p.n200 >= 2) return { ok: false, reason: 'Tu as déjà posé deux cartes 200 : c\'est le maximum.' };
     if (card > left) return { ok: false, reason: `Trop loin : il te reste ${left} km, il faut arriver pile.` };
     return { ok: true, reason: `Oui ! Tu avances de ${card} km.` };
   }
@@ -1044,11 +1058,15 @@ function canPlay(i, card) {
   if (card === 'end') return p.limited ? { ok: true, reason: 'Oui ! Fini la limitation, tu peux rouler vite.' } : { ok: false, reason: 'Tu n\'es pas limité : garde cette carte pour plus tard.' };
   if (card === 'green') {
     if (has(p, 'priority')) return { ok: false, reason: 'Pas besoin : avec le Véhicule prioritaire, tu roules sans feu vert.' };
-    if (p.battle === 'green') return { ok: false, reason: 'Tu roules déjà : garde ton feu vert pour plus tard.' };
+    if (p.battle === 'green' || (discovery() && rolling(p))) return { ok: false, reason: 'Tu roules déjà : garde ton feu vert pour plus tard.' };
     if (['fuel', 'flat', 'accident'].includes(p.battle)) return { ok: false, reason: whyStopped(p) };
     return { ok: true, reason: 'Oui ! Feu vert : tu peux rouler.' };
   }
-  if (p.battle === a.cures) return { ok: true, reason: `Oui ! ${a.name} : c'est réparé. Ensuite il te faudra un Feu vert.` };
+  if (p.battle === a.cures) {
+    return { ok: true, reason: discovery() || has(p, 'priority')
+      ? `Oui ! ${a.name} : c'est réparé, tu peux repartir.`
+      : `Oui ! ${a.name} : c'est réparé. Ensuite il te faudra un Feu vert.` };
+  }
   return { ok: false, reason: `Tu n'en as pas besoin : tu n'es pas ${HAZARD_WORDS[a.cures]}. Garde cette carte.` };
 }
 
@@ -1228,6 +1246,90 @@ $('#card-tabs').addEventListener('click', (e) => {
   cardTab = b.dataset.tab;
   sfx.click();
   renderRace();
+});
+
+/* ---------- Les règles en 1 minute ---------- */
+
+const RULE_MODES = { discovery: 'Découverte', full: 'Règles complètes', km: 'Km seulement' };
+
+function ruleCards(ids) {
+  return `<div class="rule-cards">${ids.map((id) => `<span class="rule-card">${typeof id === 'number' ? kmFace(id) : actFace(id)}</span>`).join('')}</div>`;
+}
+
+function rulePair(attack, fix, note = '') {
+  return `<div class="rule-pair">
+    <span class="rule-card">${actFace(attack)}</span><span class="rule-arrow">→</span><span class="rule-card">${actFace(fix)}</span>
+    <span class="rule-pair-text"><b>${ACTIONS[attack].name}</b> se répare avec <b>${ACTIONS[fix].name}</b>${note}</span>
+  </div>`;
+}
+
+// Chaque section : titre, contenu illustré, et texte lu à voix haute
+function ruleSections() {
+  const goal = state.goal;
+  return [
+    { title: '🏁 Le but', speak: `Le but : arriver pile à ${goal} kilomètres avant les autres.`,
+      html: `<p>Être le premier à arriver <b>pile</b> à <b>${goal} km</b>.</p>` },
+    { title: '🃏 À ton tour', speak: 'À ton tour : tu pioches une carte. Puis tu poses une carte, ou tu en jettes une.',
+      html: `<p>Chacun a <b>6 cartes</b> en main. À ton tour : <b>1.</b> tu <b>pioches</b> une carte,
+        <b>2.</b> tu <b>poses</b> une carte… <b>3.</b> … ou, si tu ne peux pas, tu en <b>jettes</b> une. Puis c'est au suivant.</p>` },
+    { title: '🛣️ Les kilomètres', speak: 'Les cartes kilomètres font avancer ta voiture. Il faut arriver pile. Pas plus de deux cartes deux cents.',
+      html: `${ruleCards([25, 50, 75, 100, 200])}<p>Elles font avancer ta voiture. Il faut arriver <b>pile</b> :
+        une carte qui dépasse ne se pose pas. <b>Deux cartes 200 maximum</b> par partie.</p>` },
+    { title: '🚦 Pour rouler', speak: 'Pour rouler, il faut un feu vert : au départ, et après une réparation.',
+      html: `${ruleCards(['green'])}<p>Pour poser des kilomètres, il faut <b>rouler</b> : un <b>Feu vert</b> au départ,
+        et de nouveau après une réparation.</p>` },
+    { title: '⚔️ Attaques et parades', speak: 'Les attaques arrêtent les autres voitures. Chaque attaque se répare avec sa parade. On attaque seulement un pilote qui roule.',
+      html: `<p>Une <b>attaque</b> se pose devant un <b>autre pilote qui roule</b>. Il doit la réparer avec la bonne <b>parade</b> :</p>
+        ${rulePair('red', 'green')}
+        ${rulePair('limit', 'end', ' (en attendant, seulement les cartes 25 et 50)')}
+        ${rulePair('fuel', 'gas')}
+        ${rulePair('flat', 'spare')}
+        ${rulePair('accident', 'repair')}` },
+    { title: '⭐ Les bottes', speak: 'Les bottes te protègent pour toute la partie, et tu rejoues. Coup fourré : si on t\'attaque et que tu as la bonne botte, pose-la tout de suite en criant coup fourré !',
+      html: `${ruleCards(['priority', 'tank', 'puncture', 'ace'])}
+        <p>Une botte te <b>protège pour toute la partie</b> et tu <b>rejoues</b> :
+        Véhicule prioritaire contre feu rouge et limitation, Citerne contre la panne, Increvable contre la crevaison,
+        As du volant contre l'accident.</p>
+        <p class="rule-highlight"><b>Coup fourré !</b> Si on t'attaque et que tu as la botte qui protège de cette attaque,
+        pose-la <b>tout de suite</b> (même si ce n'est pas ton tour) en criant « Coup fourré ! » : l'attaque est annulée et c'est toi qui rejoues.</p>` },
+    { title: '🏆 Fin de la partie', speak: 'La partie s\'arrête quand un pilote arrive pile. Si la pioche est vide, on continue avec ses cartes.',
+      html: `<p>Dès qu'un pilote arrive <b>pile</b> à ${goal} km, il gagne. Si la pioche est vide, on continue avec les cartes
+        qu'on a en main jusqu'à ce que plus personne ne puisse jouer.</p>` },
+    { title: '🧒 Mode Découverte', speak: 'En mode Découverte, pas besoin de feu vert, pas de coup fourré, et autant de cartes deux cents que tu veux.',
+      html: `<p class="rule-highlight">Pour les plus jeunes : <b>pas besoin de feu vert</b> pour démarrer ni après une réparation,
+        <b>pas de coup fourré</b>, et <b>pas de limite</b> de cartes 200. Le reste ne change pas.</p>` },
+    { title: '❓ Les questions qui font débattre', speak: '',
+      html: `<dl class="faq">
+        <dt>Je peux poser une parade si on ne m'a pas attaqué ?</dt><dd>Non. Sauf le <b>Feu vert</b>, pour démarrer.</dd>
+        <dt>Je peux attaquer un pilote déjà arrêté ?</dt><dd>Non, pas avec une deuxième attaque qui arrête. Mais on peut lui mettre une <b>limitation de vitesse</b>.</dd>
+        <dt>Je peux attaquer quelqu'un qui a la botte ?</dt><dd>Non : il est protégé contre cette attaque pour toute la partie.</dd>
+        <dt>Après une réparation, je repars tout de suite ?</dt><dd>Non, il faut un <b>Feu vert</b> (sauf avec le Véhicule prioritaire, et en mode Découverte).</dd>
+        <dt>On peut être limité et arrêté en même temps ?</dt><dd>Oui : la limitation se pose à part. Il faudra réparer, puis Feu vert, et Fin de limitation pour rouler vite.</dd>
+        <dt>Combien de cartes 200 ?</dt><dd>Deux maximum par pilote (pas de limite en mode Découverte).</dd>
+        <dt>Une botte, ça fait rejouer ?</dt><dd>Oui, on pioche une carte et on rejoue.</dd>
+        <dt>Et si la pioche est vide ?</dt><dd>On continue avec ses cartes en main, sans piocher.</dd>
+      </dl>` },
+  ];
+}
+
+function openRules() {
+  $('#rules-mode').textContent = `Vous jouez en mode : ${RULE_MODES[state.rules] || 'Règles complètes'}`;
+  $('#rules-body').innerHTML = ruleSections().map((r, n) => `
+    <section class="rule-section">
+      <h3 class="rule-title">${r.title}${r.speak ? `<button class="rule-say" data-section="${n}" aria-label="Écouter">🔊</button>` : ''}</h3>
+      ${r.html}
+    </section>`).join('');
+  $('#rules').hidden = false;
+  $('#rules-body').scrollTop = 0;
+}
+
+$('#btn-rules').addEventListener('click', () => { sfx.click(); openRules(); });
+$('#btn-rules-setup').addEventListener('click', () => { sfx.click(); openRules(); });
+$('#btn-rules-close').addEventListener('click', () => { $('#rules').hidden = true; if ('speechSynthesis' in window) window.speechSynthesis.cancel(); });
+$('#rules').addEventListener('click', (e) => {
+  const b = e.target.closest('.rule-say');
+  if (b) { if (state.muted) { state.muted = false; save(); renderSound(); } say(ruleSections()[Number(b.dataset.section)].speak); }
+  if (e.target.id === 'rules') $('#rules').hidden = true;
 });
 
 /* ---------- « Puis-je jouer cette carte ? » ---------- */

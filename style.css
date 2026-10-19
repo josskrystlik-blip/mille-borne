@@ -414,6 +414,33 @@ body.has-expanded { overflow: hidden; }
   font-size: 9px; font-weight: 900; white-space: nowrap;
 }
 
+/* ---------- Mode de règles & règles en 1 minute ---------- */
+
+.goal-buttons.rules-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.rules-3 .goal-km { font-size: 20px; }
+.rules-link { display: block; width: 100%; margin-top: 10px; text-transform: none; font-size: 16px; border-color: var(--yellow); }
+.rules-panel { width: min(680px, 100%); display: flex; flex-direction: column; max-height: calc(100vh - 32px); }
+.rules-mode { margin: -6px 0 10px; text-align: center; color: var(--yellow); font-weight: 800; }
+.rules-body { overflow-y: auto; flex: 1; min-height: 0; padding-right: 4px; color: #fff; font-size: 16px; line-height: 1.4; }
+.rules-panel > .big-btn { margin-top: 12px; }
+.rule-section { background: var(--navy-2); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }
+.rule-title {
+  display: flex; align-items: center; gap: 8px; margin: 0 0 6px;
+  font-family: 'Racing Sans One', Impact, sans-serif; font-weight: 400; font-style: italic; font-size: 21px; color: var(--yellow);
+}
+.rule-say { margin-left: auto; width: 40px; height: 36px; border-radius: 8px; border: 2px solid var(--yellow); background: var(--navy); font-size: 18px; }
+.rule-section p { margin: 6px 0; }
+.rule-section b { color: #fff3a0; }
+.rule-cards { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 6px; }
+.rule-card { display: inline-block; width: 52px; height: 73px; border-radius: 6px; overflow: hidden; background: #fff; box-shadow: 0 2px 0 rgba(0, 0, 0, .45); flex-shrink: 0; }
+.rule-pair { display: flex; align-items: center; gap: 6px; margin: 6px 0; }
+.rule-arrow { font-size: 22px; color: var(--yellow); font-weight: 900; }
+.rule-pair-text { font-size: 15px; margin-left: 4px; }
+.rule-highlight { background: rgba(255, 211, 26, .14); border-left: 4px solid var(--yellow); padding: 6px 8px; border-radius: 6px; }
+.faq { margin: 0; }
+.faq dt { font-weight: 800; color: #fff3a0; margin-top: 8px; }
+.faq dd { margin: 2px 0 0 0; }
+
 /* ---------- Écoute de la partie ---------- */
 
 .listen-row { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 12px; max-width: 600px; margin-left: auto; margin-right: auto; }
@@ -738,6 +765,10 @@ button.turn-left:active { transform: scale(.96); }
   main { padding-left: 10px; padding-right: 10px; }
   .log-row select { font-size: 14px; padding: 5px 4px; }
   .table-zones { grid-template-columns: 1fr; padding: 8px; }
+  .rules-3 .goal-km { font-size: 16px; }
+  .rules-3 .goal-sub { font-size: 12px; }
+  .rule-card { width: 44px; height: 62px; }
+  .rule-pair-text { font-size: 13px; }
   .mini-act { width: 54px; height: 76px; }
   .toast { font-size: 15px; }
   .setup-players { grid-template-columns: 1fr; }
