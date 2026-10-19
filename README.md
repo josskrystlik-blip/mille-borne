@@ -141,6 +141,20 @@ que si on l'avait touchée ; elle apparaît avec 📷 dans l'historique).
 - La caméra demande une adresse **https** (GitHub Pages convient). La fiabilité dépend de la
   lumière : à essayer, et on peut toujours toucher la carte à l'écran.
 
+## 🎓 Apprendre en jouant
+
+Sur l'écran de départ, le bouton **🎓** à côté d'un prénom fait de ce pilote un **apprenti**.
+Environ une fois sur deux après une carte km (jamais deux fois de suite sans), il reçoit un
+**petit défi** avant que le tour passe : 3 gros boutons à toucher, ou la réponse dite à voix haute.
+- **Niveau 1 – compter et comparer** : qui est devant ? quelle carte va le plus loin ? combien
+  de bornes as-tu passées ? combien de blocs de 25 dans ta carte ?
+- **Niveau 2 – additions** : « tu étais à 300, tu avances de 100 : ça fait ? », le plus grand nombre.
+- **Niveau 3 – combien reste-t-il ?**
+Le niveau monte tout seul (5 bonnes réponses sur 6) et redescend après 3 erreurs. Une bonne
+réponse rapporte une **⭐ étoile** (affichée dans Positions et au résumé) ; une erreur montre
+la bonne réponse avec une explication, sans reproche. La voix compte aussi les bornes quand la
+voiture de l'apprenti en passe une (« 300 ! »). Les défis se coupent dans le panneau Règles.
+
 ## 🧒 Affichage : Enfant, Famille ou Adulte
 
 On choisit l'affichage sur l'écran de départ (panneau **Affichage**) ou pendant la course avec le
@@ -223,6 +237,7 @@ Sur tablette, « Ajouter à l'écran d'accueil » permet de le lancer comme une 
   ouvrant `index.html` directement, sans serveur) :
   - `data.js` – cartes, actions, couleurs ; `state.js` – état et sauvegarde ;
   - `rules.js` – **la logique pure** (règles, combinaisons, points, phrases entendues) ;
+  - `learn.js` – les défis de l'apprenti et le niveau automatique ;
   - `faces.js` – dessins des voitures et des cartes ; `audio.js` – sons, musique, voix ;
   - `track.js` – circuit et effets ; `race.js` – écran de course, aide, règles, commentateur ;
   - `listen.js` – écoute vocale ; `scan.js` – caméra ; `screens.js` – départ, arrivée, widgets,

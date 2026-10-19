@@ -1,5 +1,5 @@
 'use strict';
-// Charge la logique pure du jeu (js/data.js + js/rules.js) dans un bac à sable Node,
+// Charge la logique pure du jeu (js/data.js, js/rules.js, js/learn.js) dans un bac à sable Node,
 // sans navigateur : ces fichiers n'utilisent pas le DOM.
 const fs = require('fs');
 const path = require('path');
@@ -10,7 +10,7 @@ const ROOT = path.join(__dirname, '..', '..');
 function loadGame() {
   const ctx = vm.createContext({ console });
   vm.runInContext('let state = null;', ctx);
-  ['js/data.js', 'js/rules.js'].forEach((f) => {
+  ['js/data.js', 'js/rules.js', 'js/learn.js'].forEach((f) => {
     vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx, { filename: f });
   });
   // Petit utilitaire : nouvelle partie avec des pilotes et un historique de coups

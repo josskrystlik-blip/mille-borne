@@ -1082,3 +1082,56 @@ body.theme-adult {
 @media (prefers-reduced-motion: reduce) {
   .cam-3d .stage3d, .borne3d, .tag3d { transition: none; }
 }
+
+/* ---------- Apprendre en jouant ---------- */
+.name-row { display: flex; gap: 6px; }
+.name-row .name-input { flex: 1; min-width: 0; }
+.learner-btn {
+  flex-shrink: 0; min-height: 44px; padding: 0 10px; border-radius: 8px;
+  border: 2px solid var(--panel-line); background: #0d1d38; font: 700 15px 'Barlow', sans-serif; opacity: .7;
+}
+.learner-btn[aria-pressed="true"] { opacity: 1; border-color: var(--yellow); background: var(--yellow); color: var(--navy); }
+@media (max-width: 600px) { .learner-btn span { display: none; } }
+.learn-row small { color: var(--muted); }
+
+.challenge-q { font-size: 22px; font-weight: 800; }
+.dialog-buttons.answer-grid, .answer-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); grid-auto-flow: column; gap: 10px;
+}
+.answer-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  min-height: 96px; padding: 8px; border-radius: 14px; text-transform: none; font-style: normal;
+  border: 3px solid #fff; background: var(--navy-2); color: #fff; font-size: 18px; font-weight: 800;
+}
+.dialog-buttons .answer-btn.big-btn { font-size: 18px; padding: 8px; }
+.answer-num { font-family: 'Russo One', Impact, sans-serif; font-size: 40px; line-height: 1; }
+.answer-car { width: 100%; max-width: 110px; }
+.answer-card { height: 96px; }
+.answer-card .face { height: 100%; width: auto; border-radius: 8px; }
+.answer-btn.right { border-color: #5be08a; box-shadow: 0 0 0 4px rgba(91, 224, 138, .35); }
+.answer-btn.faded { opacity: .35; }
+.learn-explain { margin-top: 12px; font-weight: 800; color: var(--yellow); }
+
+.learn-bornes { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 0 0 14px; }
+.learn-borne { width: 38px; height: auto; }
+.learn-blocks { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 0 0 14px; }
+.learn-card { height: 100px; }
+.learn-card .face { height: 100%; width: auto; border-radius: 8px; }
+.learn-block-row { display: flex; flex-wrap: wrap; gap: 6px; max-width: 180px; }
+.learn-block { width: 34px; height: 34px; border-radius: 6px; background: var(--block); border: 3px solid #fff; }
+.learn-race { position: relative; display: flex; flex-direction: column; gap: 6px; margin: 0 0 14px; padding-right: 30px; }
+.learn-lane { position: relative; height: 34px; border-radius: 6px; background: var(--asphalt); }
+.learn-lane-car { position: absolute; top: 2px; width: 72px; }
+.learn-flag { position: absolute; right: 0; top: 50%; transform: translateY(-50%); font-size: 26px; }
+
+.board-stars, .score-stars { font-size: .85em; color: var(--yellow); white-space: nowrap; }
+.star-burst {
+  position: fixed; left: 50%; top: 45%; z-index: 60; font-size: 80px; pointer-events: none;
+  animation: star-fly 1.3s ease-in forwards;
+}
+@keyframes star-fly {
+  0% { transform: translate(-50%, -50%) scale(.3); opacity: 0; }
+  25% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+  100% { transform: translate(-50%, 40vh) scale(.4); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .star-burst { animation-duration: .01s; } }

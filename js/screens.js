@@ -10,8 +10,12 @@ function renderSetup() {
     <div class="setup-player" style="--car:${colorHex(p.color)}">
       <div class="setup-car">${carSvg(colorHex(p.color), NUMBERS[i])}</div>
       <div class="setup-fields">
-        <input class="name-input" data-index="${i}" maxlength="12" placeholder="${DEFAULT_NAMES[i]}"
-               value="${escapeHtml(p.name)}" aria-label="Prénom du pilote ${i + 1}">
+        <div class="name-row">
+          <input class="name-input" data-index="${i}" maxlength="12" placeholder="${DEFAULT_NAMES[i]}"
+                 value="${escapeHtml(p.name)}" aria-label="Prénom du pilote ${i + 1}">
+          <button class="learner-btn" data-index="${i}" aria-pressed="${!!p.learner}" aria-label="Pilote apprenti"
+                  title="Pilote apprenti : petits défis de calcul">🎓<span> Apprenti</span></button>
+        </div>
         <div class="swatches">
           ${COLORS.map((c) => `
             <button class="swatch ${c.id === p.color ? 'active' : ''}" style="background:${c.hex}"
@@ -37,8 +41,12 @@ function renderSetup() {
     <button class="goal-btn ${state.uiMode === id ? 'active' : ''}" data-display="${id}">
       <span class="goal-km">${icon} ${t}</span><span class="goal-sub">${sub}</span>
     </button>`).join('');
+  $('#chk-learn').checked = state.learn.on;
+  $('#learn-level').textContent = `(niveau ${state.learn.level})`;
   renderVoices();
 }
+
+$('#chk-learn').addEventListener('change', (e) => { state.learn = { ...state.learn, on: e.target.checked }; save(); });
 
 $('#display-buttons').addEventListener('click', (e) => {
   const b = e.target.closest('[data-display]'); if (!b) return;
@@ -89,6 +97,8 @@ $('#goal-buttons').addEventListener('click', (e) => {
 });
 
 $('#setup-players').addEventListener('click', (e) => {
+  const l = e.target.closest('.learner-btn');
+  if (l) { const sp = state.setup[l.dataset.index]; sp.learner = !sp.learner; sfx.click(); save(); renderSetup(); return; }
   const b = e.target.closest('.swatch'); if (!b) return;
   state.setup[b.dataset.index].color = b.dataset.color; sfx.click(); save(); renderSetup();
 });
@@ -103,11 +113,14 @@ $('#btn-start').addEventListener('click', () => {
     name: p.name.trim() || DEFAULT_NAMES[i],
     color: colorHex(p.color),
     number: NUMBERS[i],
+    learner: !!p.learner,
     km: 0,
   }));
   state.current = 0;
   state.log = [];
   state.manches = [];
+  state.stars = [];
+  state.awaitTurn = null;
   recomputeKm();
   startRace();
 });
@@ -160,7 +173,7 @@ function renderWinner() {
         <div class="score-head">
           <span class="pos">P${n + 1}</span>
           <span class="mini-car">${carSvg(p.color, p.number)}</span>
-          <span class="rank-name">${escapeHtml(p.name)}</span>
+          <span class="rank-name">${escapeHtml(p.name)}${state.stars[i] ? ` <span class="score-stars">⭐ ${state.stars[i]}</span>` : ''}</span>
           <span class="score-total">${scores[i].total}<small> pts</small></span>
         </div>
         <ul class="score-lines">${scores[i].lines.map((l) => `<li><span>${l.label}</span><b>+${l.pts}</b></li>`).join('') || '<li><span>Pas de points cette manche</span><b>0</b></li>'}</ul>
@@ -447,6 +460,11 @@ $('#chk-commentator').checked = state.commentator;
 applyLayout();
 if (state.players.length) { recomputeKm(); cardTab = autoTab(state.current); }
 renderListen();
-if (state.screen === 'race' && state.players.length) { show('race'); renderRace(true); }
+if (state.screen === 'race' && state.players.length) {
+  // Page rechargée pendant un défi : on passe au pilote suivant
+  if (state.awaitTurn !== null && state.players[state.awaitTurn]) { state.current = state.awaitTurn; state.phase = 'draw'; }
+  state.awaitTurn = null;
+  show('race'); renderRace(true);
+}
 else if (state.screen === 'win' && state.players.length) { show('win'); renderWinner(); }
 else { state.screen = 'setup'; show('setup'); renderSetup(); }

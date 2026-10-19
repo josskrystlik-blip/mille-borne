@@ -72,7 +72,7 @@ function renderRace(initial = false) {
     <button class="board-row ${i === state.current ? 'active' : ''} ${p.km >= goal ? 'done' : ''}"
             data-index="${i}" style="--car:${p.color}">
       <span class="pos">P${pos[i]}</span>
-      <span class="board-name">${escapeHtml(p.name)}</span>
+      <span class="board-name">${escapeHtml(p.name)}${state.stars[i] ? ` <span class="board-stars">⭐${state.stars[i]}</span>` : ''}</span>
       <span class="board-km">${p.km}<small> km</small></span>
       <span class="board-left">${p.km >= goal ? 'Arrivé' : `reste ${goal - p.km}`}${boardStatus(p)}</span>
     </button>`;
@@ -253,12 +253,104 @@ function addKm(km, i = state.current, meta = {}) {
     return true;
   }
 
-  giveTurn((i + 1) % state.players.length);
-  sfx.turn();
   const said = meta.source === 'voice' ? `${p.name} avance de ${km} kilomètres. ` : '';
-  const before = said + comment(kmComment(i, km, beforeKm));
-  setTimeout(() => announceTurn(before), 1000);
+  // Pilote apprenti : la voix compte les bornes passées
+  const passed = p.learner && Math.floor(p.km / 100) > Math.floor(beforeKm[i] / 100) ? `${Math.floor(p.km / 100) * 100} ! ` : '';
+  const before = passed + said + comment(kmComment(i, km, beforeKm));
+  const nextTurn = (i + 1) % state.players.length;
+  const next = (prefix = '') => {
+    state.awaitTurn = null;
+    giveTurn(nextTurn);
+    sfx.turn();
+    setTimeout(() => announceTurn(prefix || before), prefix ? 300 : 1000);
+  };
+
+  if (p.learner && state.learn.on) {
+    if (shouldChallenge(state.learn)) {
+      state.learn = { ...state.learn, skipped: 0 };
+      state.awaitTurn = nextTurn;
+      state.phase = 'draw';
+      save();
+      renderRace();
+      setTimeout(() => runChallenge(i, km, beforeKm[i], passed, next), 1300);
+      return true;
+    }
+    state.learn = { ...state.learn, skipped: (state.learn.skipped || 0) + 1 };
+  }
+  next();
   return true;
+}
+
+/* ---------- Apprendre en jouant : le défi du pilote apprenti ---------- */
+
+function challengeVisual(ch, i) {
+  if (!ch.visual) return '';
+  if (ch.visual.type === 'bornes') {
+    return `<div class="learn-bornes">${Array.from({ length: ch.visual.count }, (_, k) => borneSvg((k + 1) * 100, 'KM', 'learn-borne')).join('')}</div>`;
+  }
+  if (ch.visual.type === 'blocks') {
+    const color = CARDS.find((c) => c.km === ch.visual.km).color;
+    return `<div class="learn-blocks">
+      <span class="learn-card">${kmFace(ch.visual.km)}</span>
+      <span class="learn-block-row">${Array.from({ length: ch.visual.count }, () => `<span class="learn-block" style="--block:${color}"></span>`).join('')}</span>
+    </div>`;
+  }
+  // Mini course : chaque voiture sur sa ligne, sans les chiffres
+  return `<div class="learn-race">${state.players.map((q) => `
+    <div class="learn-lane"><span class="learn-lane-car" style="left:calc((100% - 72px) * ${(q.km / state.goal).toFixed(3)})">${carSvg(q.color, q.number)}</span></div>`).join('')}
+    <span class="learn-flag" aria-hidden="true">🏁</span></div>`;
+}
+
+function choiceHtml(c) {
+  if (c.kind === 'player') {
+    const q = state.players[c.value];
+    return `<span class="answer-car">${carSvg(q.color, q.number)}</span><span>${escapeHtml(q.name)}</span>`;
+  }
+  if (c.kind === 'card') return `<span class="answer-card">${kmFace(c.value)}</span>`;
+  return `<span class="answer-num">${c.label}</span>`;
+}
+
+function runChallenge(i, km, before, passed, next) {
+  const p = state.players[i];
+  const ch = makeChallenge(state.learn.level, {
+    km, before, after: p.km, goal: state.goal, current: i,
+    players: state.players.map((q) => ({ name: q.name, km: q.km })),
+  });
+  const answer = (k) => {
+    const ok = k === ch.answer;
+    state.learn = nextLevel(state.learn, ok);
+    if (ok) {
+      state.stars[i] = (state.stars[i] || 0) + 1;
+      save();
+      sfx.ding();
+      starBurst();
+      next(`Bravo ${p.name} ! ${ch.explain} Tu gagnes une étoile ! `);
+      return;
+    }
+    save();
+    dialog('Presque !',
+      `<p class="dialog-text">${escapeHtml(ch.text)}</p>${challengeVisual(ch, i)}
+       <div class="answer-grid">${ch.choices.map((c, n) => `<span class="answer-btn ${n === ch.answer ? 'right' : 'faded'}">${choiceHtml(c)}</span>`).join('')}</div>
+       <p class="dialog-text learn-explain">${escapeHtml(ch.explain)}</p>`,
+      [{ label: 'On continue ▶', cls: 'go', onClick: () => next() }],
+      (t) => (/continue|suivant|d accord|ok/.test(t) ? 0 : -1));
+    say(`Presque ! ${ch.explain}`);
+  };
+  dialog(`🎓 ${escapeHtml(p.name)}, petit défi !`,
+    `<p class="dialog-text challenge-q">${escapeHtml(ch.text)}</p>${challengeVisual(ch, i)}`,
+    ch.choices.map((c, k) => ({ label: choiceHtml(c), cls: 'answer-btn', onClick: () => answer(k) })),
+    (t) => heardChoice(ch, t));
+  $('#dialog-buttons').classList.add('answer-grid');
+  say(`${passed}${p.name}, petit défi ! ${ch.say}`);
+}
+
+// Une étoile qui s'envole vers le tableau des positions
+function starBurst() {
+  const s = document.createElement('div');
+  s.className = 'star-burst';
+  s.textContent = '⭐';
+  document.body.appendChild(s);
+  setTimeout(() => s.remove(), 1400);
 }
 
 function playAction(card, target, meta = {}) {
@@ -312,6 +404,7 @@ function dialog(title, body, buttons, voice = null) {
   $('#dialog-title').innerHTML = title;
   $('#dialog-body').innerHTML = body;
   $('#dialog-buttons').innerHTML = '';
+  $('#dialog-buttons').classList.remove('answer-grid');
   buttons.forEach(({ label, cls = '', disabled = false, onClick }) => {
     const b = document.createElement('button');
     b.className = `big-btn ${cls}`;
