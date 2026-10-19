@@ -859,12 +859,15 @@ function addKm(km, i = state.current, meta = {}) {
   return true;
 }
 
-function playAction(card, target) {
+function playAction(card, target, meta = {}) {
   const i = state.current;
   const p = state.players[i];
   const a = ACTIONS[card];
-  if (a.kind === 'hazard' && target === undefined) { chooseTarget(card); return; }
-  state.log.push({ player: i, card, target, source: 'tap' });
+  if (a.kind === 'hazard' && target === undefined) { chooseTarget(card, meta); return; }
+  state.log.push({ player: i, card, target, source: meta.source || 'tap', heard: meta.heard || '' });
+  if (meta.source === 'voice') {
+    toast(`🎤 ${p.name} : ${a.name}${a.kind === 'hazard' ? ` → ${state.players[target].name}` : ''}`, true);
+  }
   recomputeKm();
   save();
   if (a.kind === 'hazard') {
@@ -891,7 +894,11 @@ function playAction(card, target) {
   setTimeout(() => announceTurn(`${a.name} pour ${p.name}. `), 900);
 }
 
-function dialog(title, body, buttons) {
+let dialogVoice = null;
+
+// voice : (phrase normalisée) => numéro du bouton à « appuyer », ou -1
+function dialog(title, body, buttons, voice = null) {
+  dialogVoice = voice;
   $('#dialog-title').innerHTML = title;
   $('#dialog-body').innerHTML = body;
   $('#dialog-buttons').innerHTML = '';
@@ -900,13 +907,13 @@ function dialog(title, body, buttons) {
     b.className = `big-btn ${cls}`;
     b.innerHTML = label;
     b.disabled = disabled;
-    b.addEventListener('click', () => { $('#dialog').hidden = true; if (onClick) onClick(); });
+    b.addEventListener('click', () => { $('#dialog').hidden = true; dialogVoice = null; if (onClick) onClick(); });
     $('#dialog-buttons').appendChild(b);
   });
   $('#dialog').hidden = false;
 }
 
-function chooseTarget(card) {
+function chooseTarget(card, meta = {}) {
   const i = state.current;
   const ok = attackTargets(i, card);
   const others = state.players.map((t, k) => k).filter((k) => k !== i);
@@ -916,10 +923,15 @@ function chooseTarget(card) {
       const why = ok.includes(k) ? '' : has(t, ACTIONS[card].safety) ? ' (protégé par sa botte)'
         : card === 'limit' ? ' (déjà limité)' : ' (ne roule pas)';
       return { label: `<span class="dot" style="background:${t.color}"></span>${escapeHtml(t.name)}<small>${why}</small>`,
-        cls: 'target-btn', disabled: !ok.includes(k), onClick: () => playAction(card, k) };
+        cls: 'target-btn', disabled: !ok.includes(k), onClick: () => playAction(card, k, meta) };
     }),
     { label: 'Annuler', cls: 'cancel-btn' },
-  ]);
+  ], (t) => {
+    const words = ` ${t} `;
+    const n = others.findIndex((k) => ok.includes(k) && words.includes(` ${normalize(state.players[k].name)} `));
+    if (n >= 0) return n;
+    return /\bannule/.test(t) ? others.length : -1;
+  });
   say('Qui attaques-tu ?');
 }
 
@@ -949,7 +961,11 @@ function askCoupFourre(i, target, card) {
           say(`Coup fourré ! ${t.name} est protégé et rejoue. Pioche une carte !`);
         } },
         { label: 'Non, on continue', onClick: next },
-      ]);
+      ], (t) => {
+        if (/pas de coup|\bnon\b|on continue|\bcontinue/.test(t)) return 1;
+        if (/coup fourre|\boui\b/.test(t)) return 0;
+        return -1;
+      });
     say(`${t.name}, as-tu la botte ${ACTIONS[safety].name} ? Coup fourré ?`);
   }, 1300);
 }
@@ -1083,10 +1099,11 @@ function renderLog() {
   }
   list.innerHTML = state.log.map((e, n) => ({ e, n })).reverse().map(({ e, n }) => (ACTIONS[e.card] ? `
     <li class="log-row log-action" style="--car:${state.players[e.player].color}">
-      <span class="log-icon">${ACTIONS[e.card].kind === 'hazard' ? '⚔️' : ACTIONS[e.card].kind === 'remedy' ? '🔧' : '⭐'}</span>
+      <span class="log-icon">${e.source === 'voice' ? '🎤' : ACTIONS[e.card].kind === 'hazard' ? '⚔️' : ACTIONS[e.card].kind === 'remedy' ? '🔧' : '⭐'}</span>
       <span class="log-text">${escapeHtml(state.players[e.player].name)} : ${ACTIONS[e.card].name}${
         ACTIONS[e.card].kind === 'hazard' ? ` → ${escapeHtml(state.players[e.target].name)}` : ''}${e.cf ? ' — coup fourré !' : ''}</span>
       <button class="log-del" data-entry="${n}" aria-label="Supprimer ce coup">✖</button>
+      ${e.heard ? `<span class="log-heard">« ${escapeHtml(e.heard)} »</span>` : ''}
     </li>` : `
     <li class="log-row" style="--car:${state.players[e.player].color}">
       <span class="log-icon" title="${e.source === 'voice' ? 'Entendu' : 'Touché'}">${e.source === 'voice' ? '🎤' : '👆'}</span>
@@ -1432,6 +1449,24 @@ const VALUE_WORDS = [
   [['50'], 50], [['cinquante'], 50], [['canard'], 50, true], [['canards'], 50, true],
   [['25'], 25], [['escargot'], 25, true], [['escargots'], 25, true],
 ];
+// Cartes attaque / parade / botte (les expressions les plus longues d'abord)
+const CARD_WORDS = [
+  ['fin de limitation de vitesse', 'end'], ['fin de la limitation', 'end'], ['fin de limitation', 'end'],
+  ['fin de limite de vitesse', 'end'], ['fin de limite', 'end'],
+  ['limitation de vitesse', 'limit'], ['limite de vitesse', 'limit'], ['limitation', 'limit'], ['limite', 'limit'],
+  ['panne d essence', 'fuel'], ['panne', 'fuel'],
+  ['citerne d essence', 'tank'], ['citerne', 'tank'],
+  ['essence', 'gas'],
+  ['feu rouge', 'red'], ['stop', 'red'], ['feu vert', 'green'], ['roulez', 'green'],
+  ['pneu creve', 'flat'], ['crevaison', 'flat'], ['creve', 'flat'], ['crevee', 'flat'],
+  ['roue de secours', 'spare'],
+  ['accident', 'accident'],
+  ['reparations', 'repair'], ['reparation', 'repair'], ['repare', 'repair'], ['reparer', 'repair'],
+  ['vehicule prioritaire', 'priority'], ['prioritaire', 'priority'],
+  ['increvable', 'puncture'],
+  ['as du volant', 'ace'],
+].map(([w, card]) => [w.split(' '), card]);
+const ATTACK_VERBS = ['met', 'mets', 'pose', 'poses', 'attaque', 'attaques', 'joue', 'joues', 'donne', 'donnes'];
 const SELF_WORDS = ['je', 'j', 'moi'];
 const GAME_WORDS = ['pose', 'poses', 'mets', 'met', 'mis', 'joue', 'joues', 'avance', 'avances', 'km', 'kilometre', 'kilometres', 'borne', 'bornes', 'carte', 'plus'];
 const SKIP_WORDS = ['reste', 'restent', 'faut', 'manque', 'manquent'];
@@ -1452,6 +1487,8 @@ function parseHeard(text, names, current) {
 
   const mentions = [];
   for (let i = 0; i < words.length;) {
+    const card = CARD_WORDS.find(([seq]) => at(i, seq));
+    if (card) { mentions.push({ type: 'card', card: card[1], pos: i, end: i + card[0].length }); i += card[0].length; continue; }
     const value = VALUE_WORDS.find(([seq]) => at(i, seq));
     if (value) { mentions.push({ type: 'value', km: value[1], animal: !!value[2], pos: i, end: i + value[0].length }); i += value[0].length; continue; }
     const player = nameWords.map((seq, p) => ({ seq, p })).filter(({ seq }) => at(i, seq))
@@ -1462,8 +1499,9 @@ function parseHeard(text, names, current) {
   }
 
   const values = mentions.filter((m) => m.type === 'value');
-  if (!values.length) return [];
-  const trigger = mentions.some((m) => m.type !== 'value' || m.animal) || words.some((w) => GAME_WORDS.includes(w));
+  const cards = mentions.filter((m) => m.type === 'card');
+  if (!values.length && !cards.length) return [];
+  const trigger = cards.length || mentions.some((m) => m.type !== 'value' || m.animal) || words.some((w) => GAME_WORDS.includes(w));
   if (!trigger) return [];
 
   // « cent cinquante », « trois cents » : ce sont des nombres, pas des cartes
@@ -1472,10 +1510,18 @@ function parseHeard(text, names, current) {
     const next = values[k + 1];
     if (!v.animal && next && !next.animal && next.pos === v.end && v.km >= 100) { skip.add(v); skip.add(next); }
     if (!v.animal && NUMBER_WORDS.includes(words[v.pos - 1]) && v.km === 100) skip.add(v);
+    // « limitation à 50 » : le 50 fait partie du nom de la carte
+    const before = mentions[mentions.indexOf(v) - 1];
+    if (before && before.type === 'card' && ['limit', 'end'].includes(before.card) && v.pos - before.end <= 2) skip.add(v);
   });
 
+  const linked = (from, to) => {
+    const gap = words.slice(from, to).filter((w) => !/^\d+$/.test(w) && w !== 'cinquante');
+    return gap.length <= 3 && gap.every((w) => LINK_WORDS.includes(w) || ['avec', 'sur', 'un', 'une', 'le', 'la', 'les'].includes(w));
+  };
   const moves = [];
   mentions.forEach((m, k) => {
+    if (m.type === 'card') { moves.push(cardMove(m, k)); return; }
     if (m.type !== 'value' || skip.has(m)) return;
     let player = current;
     const next = mentions[k + 1];
@@ -1486,6 +1532,27 @@ function parseHeard(text, names, current) {
     moves.push({ player, km: m.km });
   });
   return moves;
+
+  // Qui joue la carte, et pour une attaque, qui la reçoit
+  function cardMove(m, k) {
+    const start = mentions.slice(0, k).map((x) => x.type).lastIndexOf('card') + 1;
+    const before = mentions.slice(start, k).filter((x) => x.type === 'name' || x.type === 'self');
+    const next = mentions.slice(k + 1).find((x) => !skip.has(x));
+    const after = next && next.type === 'name' && linked(m.end, next.pos) ? next.player : undefined;
+    const who = (x) => (x.type === 'self' ? current : x.player);
+    if (ACTIONS[m.card].kind !== 'hazard') {
+      return { card: m.card, player: after ?? (before.length ? who(before[before.length - 1]) : current) };
+    }
+    if (after !== undefined) return { card: m.card, player: before.length ? who(before[0]) : current, target: after };
+    if (before.length >= 2) return { card: m.card, player: who(before[0]), target: who(before[1]) };
+    if (before.length === 1) {
+      const x = before[0];
+      const verb = words.slice(x.end, m.pos).some((w) => ATTACK_VERBS.includes(w));
+      if (x.type === 'self' || who(x) === current || verb) return { card: m.card, player: who(x) };
+      return { card: m.card, player: current, target: x.player };
+    }
+    return { card: m.card, player: current };
+  }
 }
 
 const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1568,14 +1635,61 @@ function resumeListening() {
 
 function handleHeard(alternatives) {
   if (state.screen !== 'race') return;
+  // Une fenêtre attend une réponse : « Papa », « coup fourré ! », « non »…
+  if (!$('#dialog').hidden && dialogVoice) {
+    for (const text of alternatives) {
+      const n = dialogVoice(normalize(text));
+      const b = $('#dialog-buttons').children[n];
+      if (n >= 0 && b && !b.disabled) { setListenStatus(`Compris : « ${text} »`); b.click(); return; }
+    }
+    setListenStatus(`Entendu : « ${alternatives[0]} »`);
+    return;
+  }
   for (const text of alternatives) {
-    const moves = parseHeard(text, state.players.map((p) => p.name), state.current);
+    const moves = parseHeard(text, state.players.map((p) => p.name), state.current)
+      .filter((m) => m.km || fullRules());
     if (!moves.length) continue;
     setListenStatus(`Compris : « ${text} »`);
-    moves.forEach(({ player, km }) => applyHeard(player, km, text));
+    for (const m of moves) {
+      if (m.km) applyHeard(m.player, m.km, text);
+      else if (applyHeardCard(m, text) === 'wait') break; // une fenêtre s'ouvre : on attend la réponse
+    }
     return;
   }
   setListenStatus(`Entendu : « ${alternatives[0]} »`);
+}
+
+// Pourquoi ce pilote ne peut pas recevoir cette attaque
+function whyNotTarget(target, card) {
+  const t = state.players[target];
+  if (has(t, ACTIONS[card].safety)) return `${t.name} est protégé par sa botte ${ACTIONS[ACTIONS[card].safety].name}.`;
+  if (card === 'limit') return `${t.name} est déjà limité.`;
+  if (t.km >= state.goal) return `${t.name} est déjà arrivé.`;
+  return `${t.name} ne roule pas : on ne peut attaquer qu'un pilote qui roule.`;
+}
+
+function applyHeardCard({ card, player, target }, text) {
+  if (state.players.some((p) => p.km >= state.goal)) return 'done';
+  const p = state.players[player];
+  const a = ACTIONS[card];
+  let reason = null;
+  if (target === player) reason = `${p.name} ne peut pas s'attaquer lui-même.`;
+  else if (a.kind === 'hazard' && target !== undefined && !attackTargets(player, card).includes(target)) reason = whyNotTarget(target, card);
+  else {
+    const check = canPlay(player, card);
+    if (!check.ok) reason = check.reason;
+  }
+  if (reason) {
+    sfx.nope();
+    toast(`🎤 ${p.name} : ${a.name} — impossible. ${reason}`);
+    say(`Attention ${p.name} : ${reason}`);
+    return 'refused';
+  }
+  // La carte est jouée par celui qui l'annonce, même si ce n'était pas son tour
+  state.current = player;
+  state.phase = 'play';
+  playAction(card, target, { source: 'voice', heard: text });
+  return a.kind === 'hazard' ? 'wait' : 'done';
 }
 
 function applyHeard(i, km, text) {

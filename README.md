@@ -85,11 +85,25 @@ La disposition est mémorisée.
 ## 🎤 Écouter la partie
 
 Le bouton **Écouter la partie** utilise le micro et la reconnaissance vocale du navigateur
-(Chrome, Edge ou Safari récents) pour noter les km sans toucher l'écran :
+(Chrome, Edge ou Safari récents) pour noter les coups sans toucher l'écran :
 - « **Léo** pose 50 », « cent **pour Papa** », « Maman joue deux cents », « je mets un escargot »,
   « Léo 50 et Papa 100 » ;
 - les valeurs peuvent être dites en chiffres, en lettres ou par l'animal de la carte ;
 - sans prénom (« je », « moi »…), les km vont au pilote dont c'est le tour.
+
+Avec les **règles complètes**, l'écoute comprend aussi les autres cartes :
+- **parades** : « Léo pose un feu vert », « je mets la roue de secours », « Papa fait les réparations »,
+  « fin de limitation pour Maman » ;
+- **bottes** : « Maman pose l'as du volant », « citerne », « increvable », « véhicule prioritaire » ;
+- **attaques** : « Maman met un feu rouge à Léo », « crevaison pour Papa », « Léo attaque Maman avec
+  un accident », « limitation à 50 pour Papa ». Qui attaque : le prénom dit avant la carte, sinon le
+  pilote dont c'est le tour. Qui est attaqué : le prénom dit après la carte ; s'il manque, la fenêtre
+  « Qui attaques-tu ? » s'ouvre et on répond à voix haute (« Papa ») ;
+- **coup fourré** : à la question du jeu, répondre « Coup fourré ! » (ou « oui ») ou « non ».
+
+Une carte impossible (pilote déjà arrêté, protégé par sa botte, pas besoin de cette parade…) est
+refusée et la voix explique pourquoi. Astuce : laisser la voix du jeu finir sa phrase avant de parler,
+car le micro est coupé pendant qu'elle parle.
 
 Le jeu ne reconnaît pas *qui* parle au son de la voix : c'est le prénom prononcé qui compte.
 Les phrases qui parlent de ce qu'il « reste » ou des nombres comme « cent cinquante » sont ignorées,
@@ -97,7 +111,7 @@ et l'écoute est coupée pendant que le jeu parle. Après chaque annonce compris
 « 🎤 Papa +100 km — Corriger » s'affiche.
 
 **Corriger après coup** : dans le widget **Historique**, chaque coup (🎤 entendu ou 👆 touché) peut
-être attribué à un autre pilote, changé de valeur ou supprimé ; les km sont recalculés.
+être supprimé, et pour les km attribué à un autre pilote ou changé de valeur ; tout est recalculé.
 
 ## Voix
 
