@@ -71,6 +71,8 @@ function defaultState() {
     log: [],
     muted: false,
     voice: '',
+    music: false,         // petite musique de course
+    commentator: true,    // le commentateur de course
     rules: 'full', // 'full' : attaques, parades et bottes ; 'km' : seulement les kilomètres
     layout: { order: [...WIDGETS], collapsed: {} },
     manches: [],      // points de chaque manche jouée : [[points du pilote 0, 1, …], …]
@@ -271,19 +273,49 @@ function tone(freq, start, dur, type = 'square', vol = 0.12) {
   o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur);
 }
 
+// Bruit blanc (pour le moteur, la foule, les chocs…)
+let noiseBuffer = null;
+function noise(ac) {
+  if (!noiseBuffer) {
+    noiseBuffer = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
+    const d = noiseBuffer.getChannelData(0);
+    for (let k = 0; k < d.length; k++) d[k] = Math.random() * 2 - 1;
+  }
+  const src = ac.createBufferSource();
+  src.buffer = noiseBuffer;
+  return src;
+}
+
+// Petit bruit filtré avec une enveloppe : la base des effets sonores
+function noiseBurst({ start = 0, dur = 0.3, type = 'bandpass', freq = 1000, q = 1, vol = 0.2, attack = 0.01 }) {
+  const ac = ctx(); if (!ac) return;
+  const t = ac.currentTime + start;
+  const src = noise(ac); const f = ac.createBiquadFilter(); const g = ac.createGain();
+  f.type = type; f.frequency.value = freq; f.Q.value = q;
+  g.gain.setValueAtTime(0.001, t); g.gain.exponentialRampToValueAtTime(vol, t + attack);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  src.connect(f).connect(g).connect(ac.destination); src.start(t); src.stop(t + dur + 0.05);
+}
+
+// Moteur : deux oscillateurs désaccordés + grondement, le régime monte avec la carte
 function vroom(power = 1) {
   const ac = ctx(); if (!ac) return;
   const t = ac.currentTime;
-  const dur = 0.5 + power * 0.35;
-  const o = ac.createOscillator(); const f = ac.createBiquadFilter(); const g = ac.createGain();
-  o.type = 'sawtooth';
-  o.frequency.setValueAtTime(70, t);
-  o.frequency.exponentialRampToValueAtTime(160 + power * 140, t + dur * 0.55);
-  o.frequency.exponentialRampToValueAtTime(110, t + dur);
-  f.type = 'lowpass'; f.frequency.value = 900;
-  g.gain.setValueAtTime(0.001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.05);
-  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-  o.connect(f).connect(g).connect(ac.destination); o.start(t); o.stop(t + dur);
+  const dur = 0.6 + power * 0.6;
+  const out = ac.createGain(); const f = ac.createBiquadFilter();
+  f.type = 'lowpass'; f.frequency.setValueAtTime(500, t); f.frequency.linearRampToValueAtTime(1400 + power * 800, t + dur * 0.6);
+  out.gain.setValueAtTime(0.001, t); out.gain.exponentialRampToValueAtTime(0.22, t + 0.06);
+  out.gain.setValueAtTime(0.22, t + dur * 0.7); out.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  [0, 7].forEach((detune) => {
+    const o = ac.createOscillator();
+    o.type = 'sawtooth'; o.detune.value = detune * 10;
+    o.frequency.setValueAtTime(55, t);
+    o.frequency.exponentialRampToValueAtTime(120 + power * 180, t + dur * 0.6);
+    o.frequency.exponentialRampToValueAtTime(90, t + dur);
+    o.connect(f); o.start(t); o.stop(t + dur);
+  });
+  f.connect(out).connect(ac.destination);
+  noiseBurst({ dur, type: 'lowpass', freq: 300, vol: 0.12, attack: 0.05 });
 }
 
 /* ---------- Voix (synthèse vocale du navigateur) ---------- */
@@ -343,7 +375,64 @@ const sfx = {
   nope: () => { tone(200, 0, 0.15, 'square', 0.08); tone(150, 0.15, 0.2, 'square', 0.08); },
   turn: () => { tone(784, 0.7, 0.12, 'triangle', 0.08); tone(1047, 0.82, 0.18, 'triangle', 0.08); },
   win: () => [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone(f, i * 0.15, 0.3, 'square', 0.1)),
+  // Klaxon « pouet-pouet » quand on attaque
+  horn: () => { [0, 0.22].forEach((st) => { tone(392, st, 0.18, 'square', 0.09); tone(494, st, 0.18, 'square', 0.07); }); },
+  // Choc de l'accident
+  crash: () => { noiseBurst({ dur: 0.6, type: 'lowpass', freq: 900, vol: 0.4 }); tone(90, 0, 0.4, 'sawtooth', 0.12); noiseBurst({ start: 0.15, dur: 0.5, freq: 3000, q: 0.5, vol: 0.15 }); },
+  // Pneu qui se dégonfle
+  hiss: () => noiseBurst({ dur: 1.1, type: 'highpass', freq: 4000, vol: 0.18, attack: 0.05 }),
+  // Moteur qui toussote (panne d'essence)
+  cough: () => [0, 0.25, 0.55].forEach((st) => { tone(70, st, 0.12, 'sawtooth', 0.12); noiseBurst({ start: st, dur: 0.12, type: 'lowpass', freq: 400, vol: 0.18 }); }),
+  // Petit « ding » de réparation
+  ding: () => { tone(1319, 0, 0.35, 'sine', 0.12); tone(1760, 0.08, 0.4, 'sine', 0.08); },
+  // Fanfare de botte
+  fanfare: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.1, i === 3 ? 0.5 : 0.12, 'square', 0.1)),
+  // La foule qui applaudit
+  crowd: (dur = 2.2) => {
+    noiseBurst({ dur, freq: 1500, q: 0.4, vol: 0.18, attack: 0.25 });
+    for (let k = 0; k < 18; k++) noiseBurst({ start: Math.random() * (dur - 0.3), dur: 0.07, type: 'highpass', freq: 2500, vol: 0.12 });
+  },
 };
+
+// Le son qui va avec chaque carte attaque / parade / botte
+function cardSound(card) {
+  const a = ACTIONS[card];
+  if (a.kind === 'safety') { sfx.fanfare(); return; }
+  if (a.kind === 'remedy') { if (card === 'green') vroom(0.4); else sfx.ding(); return; }
+  sfx.horn();
+  if (card === 'accident') setTimeout(sfx.crash, 350);
+  if (card === 'flat') setTimeout(sfx.hiss, 350);
+  if (card === 'fuel') setTimeout(sfx.cough, 350);
+  if (card === 'red') setTimeout(() => tone(220, 0, 0.4, 'square', 0.08), 350);
+}
+
+/* ---------- Musique de course (petite boucle synthétisée) ---------- */
+
+const MUSIC_NOTES = [
+  // mélodie (notes MIDI, 0 = silence) sur 32 croches, basse sur 8 temps
+  [72, 0, 76, 79, 81, 79, 76, 0, 74, 0, 77, 81, 79, 77, 74, 0, 72, 0, 76, 79, 84, 83, 81, 79, 77, 76, 74, 72, 74, 0, 72, 0],
+  [48, 48, 53, 53, 55, 55, 48, 43],
+];
+let musicTimer = 0;
+let musicStep = 0;
+
+function midi(n) { return 440 * Math.pow(2, (n - 69) / 12); }
+
+function musicTick() {
+  if (!state.music || state.muted) return;
+  const mel = MUSIC_NOTES[0][musicStep % 32];
+  if (mel) tone(midi(mel), 0, 0.16, 'square', 0.025);
+  if (musicStep % 4 === 0) tone(midi(MUSIC_NOTES[1][(musicStep / 4) % 8]), 0, 0.35, 'triangle', 0.05);
+  if (musicStep % 2 === 0) noiseBurst({ dur: 0.04, type: 'highpass', freq: 7000, vol: 0.03 });
+  musicStep += 1;
+}
+
+function renderMusic() {
+  clearInterval(musicTimer);
+  if (state.music && !state.muted) musicTimer = setInterval(musicTick, 170);
+  $('#btn-music').classList.toggle('off', !state.music);
+  $('#btn-music').setAttribute('aria-label', state.music ? 'Couper la musique' : 'Mettre la musique');
+}
 
 /* ---------- Écran de préparation ---------- */
 
@@ -469,7 +558,10 @@ function countdown() {
     if (i < 3) { lights[i].classList.add('red'); sfx.beep(); }
     else { lights.forEach((l) => l.className = 'light green'); sfx.go(); vroom(1); }
   }, i * 800));
-  setTimeout(() => { overlay.hidden = true; announceTurn(); }, steps.length * 800 + 300);
+  setTimeout(() => {
+    overlay.hidden = true;
+    announceTurn(comment(`Et c'est parti pour ${state.goal} kilomètres de course !`));
+  }, steps.length * 800 + 300);
 }
 
 // Classement : position de chaque joueur (les ex æquo partagent la même place)
@@ -583,7 +675,14 @@ function buildRoad() {
       <g class="remains">${state.players.map((p, i) => `<path class="remain" data-index="${i}"/>`).join('')}</g>
       <ellipse class="halo" rx="${carW * 0.62}" ry="${laneW * 0.62}"/>
       <g class="cars">${state.players.map((p, i) => `
-        <g class="car" data-index="${i}">${carSvg(p.color, p.number, 'track-car', `x="${-carW / 2}" y="${-carH / 2}" width="${carW}" height="${carH}"`)}</g>`).join('')}</g>
+        <g class="car" data-index="${i}"><g class="car-body">${carSvg(p.color, p.number, 'track-car', `x="${-carW / 2}" y="${-carH / 2}" width="${carW}" height="${carH}"`)}</g></g>`).join('')}</g>
+      <g class="car-fxs">${state.players.map((p, i) => `
+        <g class="car-fx" data-index="${i}">
+          <g class="fx-smoke">${[0, 1, 2, 3].map((k) => `<circle r="${laneW * 0.28}" style="animation-delay:${k * 0.4}s"/>`).join('')}</g>
+          <g class="fx-light"><rect x="-7" y="-30" width="14" height="30" rx="4" fill="#1a1a1a"/><rect x="-1.5" y="0" width="3" height="12" fill="#1a1a1a"/>
+            <circle cy="-23" r="4.5" fill="#ff2a1a"/><circle cy="-15" r="4.5" fill="#555"/><circle cy="-7" r="4.5" fill="#555"/></g>
+          <g class="fx-shield-pos"><circle class="fx-shield" r="${carW * 0.6}"/></g>
+        </g>`).join('')}</g>
       <g class="statuses">${state.players.map((p, i) => `
         <g class="status" data-index="${i}">
           <text class="st-battle" x="0" y="0"></text>
@@ -613,6 +712,12 @@ function placeCars() {
     road.querySelector(`.trail[data-index="${i}"]`).setAttribute('d', f > 0 ? trackPath(0, f, off) : '');
     road.querySelector(`.remain[data-index="${i}"]`).setAttribute('d', f < 1 ? trackPath(f, 1, off) : '');
     road.querySelector(`.status[data-index="${i}"]`).setAttribute('transform', `translate(${c.x} ${c.y - carH / 2 - 12})`);
+    // Effets : fumée et bouclier sur la voiture, feu rouge sur la piste devant elle
+    const fx = road.querySelector(`.car-fx[data-index="${i}"]`);
+    const ahead = trackPoint(f + 16 / length, off);
+    fx.querySelector('.fx-smoke').setAttribute('transform', `translate(${c.x} ${c.y})`);
+    fx.querySelector('.fx-shield-pos').setAttribute('transform', `translate(${c.x} ${c.y})`);
+    fx.querySelector('.fx-light').setAttribute('transform', `translate(${ahead.x} ${ahead.y})`);
     if (i === state.current) {
       const halo = road.querySelector('.halo');
       halo.setAttribute('transform', `translate(${c.x} ${c.y}) rotate(${c.angle})`);
@@ -669,6 +774,13 @@ function renderRace(initial = false) {
     const st = road.querySelector(`.status[data-index="${i}"]`);
     st.querySelector('.st-battle').textContent = statusIcon(p);
     st.querySelector('.st-limit').style.display = fullRules() && p.limited ? '' : 'none';
+    // État visible sur la voiture : fumée, roue à plat, moteur qui toussote, feu rouge
+    const battle = fullRules() && p.km < goal && ACTIONS[p.battle] && ACTIONS[p.battle].kind === 'hazard' ? p.battle : '';
+    ['accident', 'flat', 'fuel', 'red'].forEach((h) => {
+      road.querySelector(`.car[data-index="${i}"]`).classList.toggle(`st-${h}`, battle === h);
+      road.querySelector(`.car-fx[data-index="${i}"]`).classList.toggle(`st-${h}`, battle === h);
+    });
+    road.querySelector(`.car[data-index="${i}"]`).classList.toggle('st-limit', fullRules() && p.limited);
   });
   if (rebuild) { shown = state.players.map((p) => p.km); placeCars(); } else animateCars();
 
@@ -846,6 +958,7 @@ function explain(reason) {
 function addKm(km, i = state.current, meta = {}) {
   const p = state.players[i];
   if (p.km + km > state.goal) { sfx.nope(); return false; }
+  const beforeKm = state.players.map((q) => q.km);
   p.km += km;
   state.log.push({ player: i, km, source: meta.source || 'tap', heard: meta.heard || '' });
 
@@ -862,7 +975,8 @@ function addKm(km, i = state.current, meta = {}) {
 
   giveTurn((i + 1) % state.players.length);
   sfx.turn();
-  const before = meta.source === 'voice' ? `${p.name} avance de ${km} kilomètres. ` : '';
+  const said = meta.source === 'voice' ? `${p.name} avance de ${km} kilomètres. ` : '';
+  const before = said + comment(kmComment(i, km, beforeKm));
   setTimeout(() => announceTurn(before), 1000);
   return true;
 }
@@ -873,16 +987,16 @@ function playAction(card, target, meta = {}) {
   const a = ACTIONS[card];
   if (a.kind === 'hazard' && target === undefined) { chooseTarget(card, meta); return; }
   state.log.push({ player: i, card, target, source: meta.source || 'tap', heard: meta.heard || '' });
-  if (meta.source === 'voice') {
-    toast(`🎤 ${p.name} : ${a.name}${a.kind === 'hazard' ? ` → ${state.players[target].name}` : ''}`, true);
+  if (meta.source === 'voice' || meta.source === 'camera') {
+    toast(`${meta.source === 'camera' ? '📷' : '🎤'} ${p.name} : ${a.name}${a.kind === 'hazard' ? ` → ${state.players[target].name}` : ''}`, true);
   }
   recomputeKm();
   save();
   if (a.kind === 'hazard') {
     const t = state.players[target];
-    sfx.nope();
+    cardSound(card);
     renderRace();
-    say(`${p.name} met ${a.name} à ${t.name} !`);
+    say(`${p.name} met ${a.name} à ${t.name} ! ${comment(HAZARD_COMMENTS[card](t.name))}`);
     if (discovery()) {
       // Pas de coup fourré en mode Découverte : on passe au pilote suivant
       giveTurn((i + 1) % state.players.length);
@@ -894,19 +1008,20 @@ function playAction(card, target, meta = {}) {
     return;
   }
   if (a.kind === 'safety') {
-    sfx.win();
+    cardSound(card);
     flash();
     state.phase = 'draw';
     renderRace();
+    shield(i);
     toast(`⭐ ${p.name} pose la botte ${a.name} et rejoue !`);
-    setTimeout(() => say(`Bravo ! ${a.name}. ${p.name}, tu rejoues : pioche une carte.`), 300);
+    const extra = comment(pick([`Quelle botte pour ${p.name} !`, `${p.name} est protégé pour toute la course !`]));
+    setTimeout(() => say(`${extra}${a.name}. ${p.name}, tu rejoues : pioche une carte.`), 300);
     return;
   }
-  sfx.click();
-  vroom(0.3);
+  cardSound(card);
   giveTurn((i + 1) % state.players.length);
   sfx.turn();
-  setTimeout(() => announceTurn(`${a.name} pour ${p.name}. `), 900);
+  setTimeout(() => announceTurn(`${a.name} pour ${p.name}. ${comment(remedyComment(p, card))}`), 900);
 }
 
 let dialogVoice = null;
@@ -967,13 +1082,14 @@ function askCoupFourre(i, target, card) {
         { label: '⭐ Oui, coup fourré !', cls: 'go', onClick: () => {
           state.log.push({ player: target, card: safety, cf: true, source: 'tap' });
           recomputeKm();
-          sfx.win(); flash(); confetti();
+          sfx.fanfare(); sfx.crowd(); flash(); confetti();
           state.current = target;
           state.phase = 'draw';
           cardTab = autoTab(target);
           save();
           renderRace();
-          say(`Coup fourré ! ${t.name} est protégé et rejoue. Pioche une carte !`);
+          shield(target);
+          say(`Coup fourré ! ${comment(pick([`Incroyable ! Quel réflexe de ${t.name} !`, `La foule est debout pour ${t.name} !`]))}${t.name} est protégé et rejoue. Pioche une carte !`);
         } },
         { label: 'Non, on continue', onClick: next },
       ], (t) => {
@@ -987,6 +1103,9 @@ function askCoupFourre(i, target, card) {
 
 function finish(i) {
   renderRace();
+  fireworks();
+  sfx.crowd(3);
+  comment(`${state.players[i].name} franchit la ligne d'arrivée !`);
   $('#turn-banner').innerHTML = `<span class="turn-text"><b>${escapeHtml(state.players[i].name)}</b> passe la ligne !</span>`;
   save();
   stopListening();
@@ -1074,6 +1193,63 @@ function canPlay(i, card) {
   return { ok: false, reason: `Tu n'en as pas besoin : tu n'es pas ${HAZARD_WORDS[a.cures]}. Garde cette carte.` };
 }
 
+/* ---------- Commentateur de course ---------- */
+
+const pick = (list) => list[Math.floor(Math.random() * list.length)];
+
+function showCommentary(text) {
+  const el = $('#commentary');
+  el.textContent = `🎙️ ${text}`;
+  el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+}
+
+// Renvoie la phrase à dire (vide si le commentateur est coupé)
+function comment(text) {
+  if (!text || !state.commentator) return '';
+  showCommentary(text);
+  return `${text} `;
+}
+
+const listNames = (ps) => ps.map((q) => q.name).join(' et ');
+
+// Ce qui vient de se passer après une carte km
+function kmComment(i, km, beforeKm) {
+  const p = state.players[i];
+  const left = state.goal - p.km;
+  const others = state.players.filter((q, k) => k !== i);
+  const passed = others.filter((q) => q.km >= beforeKm[i] && q.km < p.km);
+  const leaderNow = others.every((q) => q.km < p.km);
+  const wasLeader = others.every((q) => q.km < beforeKm[i]);
+  if (leaderNow && !wasLeader && others.length) {
+    return pick([`${p.name} prend la tête de la course !`, `Et ${p.name} passe en tête !`, `Nouveau leader : ${p.name} !`]);
+  }
+  if (passed.length) {
+    return pick([`${p.name} double ${listNames(passed)} !`, `Quel dépassement de ${p.name} sur ${listNames(passed)} !`]);
+  }
+  if (left > 0 && left <= 100 && state.goal - beforeKm[i] > 100) return `Plus que ${left} kilomètres pour ${p.name}, l'arrivée est en vue !`;
+  if (left > 0 && left <= 200 && state.goal - beforeKm[i] > 200) return `${p.name} entre dans la dernière ligne droite !`;
+  if (km === 200) return pick([`Une hirondelle ! ${p.name} file à toute vitesse !`, `Deux cents kilomètres d'un coup, quelle fusée !`]);
+  const sorted = [...state.players].sort((a, b) => b.km - a.km);
+  if (sorted.length > 1 && sorted[0].km - sorted[1].km < 75 && Math.random() < 0.4) {
+    return `Course très serrée entre ${sorted[0].name} et ${sorted[1].name} !`;
+  }
+  return Math.random() < 0.3 ? pick([`${p.name} avance tranquillement.`, `Belle carte de ${p.name} !`]) : '';
+}
+
+const HAZARD_COMMENTS = {
+  red: (t) => pick([`${t} est arrêté au feu rouge !`, `Stop ! ${t} doit s'arrêter !`]),
+  limit: (t) => `${t} doit ralentir : limitation à cinquante !`,
+  fuel: (t) => pick([`Panne sèche pour ${t} !`, `Oh là là, ${t} n'a plus d'essence !`]),
+  flat: (t) => pick([`Aïe ! ${t} a crevé !`, `Pschhh… le pneu de ${t} est à plat !`]),
+  accident: (t) => pick([`Oh non, accident pour ${t} !`, `Badaboum ! ${t} est accidenté !`]),
+};
+
+function remedyComment(p, card) {
+  if (card === 'green') return pick([`${p.name} repart !`, `Feu vert, ${p.name} redémarre !`]);
+  if (card === 'end') return `${p.name} peut de nouveau rouler vite !`;
+  return pick([`${p.name} est réparé !`, `Les mécaniciens ont fait du bon travail pour ${p.name} !`]);
+}
+
 /* ---------- Historique : correction des coups ---------- */
 
 // L'état de chaque pilote est rejoué à partir de l'historique des coups
@@ -1121,14 +1297,14 @@ function renderLog() {
   }
   list.innerHTML = state.log.map((e, n) => ({ e, n })).reverse().map(({ e, n }) => (ACTIONS[e.card] ? `
     <li class="log-row log-action" style="--car:${state.players[e.player].color}">
-      <span class="log-icon">${e.source === 'voice' ? '🎤' : ACTIONS[e.card].kind === 'hazard' ? '⚔️' : ACTIONS[e.card].kind === 'remedy' ? '🔧' : '⭐'}</span>
+      <span class="log-icon">${e.source === 'voice' ? '🎤' : e.source === 'camera' ? '📷' : ACTIONS[e.card].kind === 'hazard' ? '⚔️' : ACTIONS[e.card].kind === 'remedy' ? '🔧' : '⭐'}</span>
       <span class="log-text">${escapeHtml(state.players[e.player].name)} : ${ACTIONS[e.card].name}${
         ACTIONS[e.card].kind === 'hazard' ? ` → ${escapeHtml(state.players[e.target].name)}` : ''}${e.cf ? ' — coup fourré !' : ''}</span>
       <button class="log-del" data-entry="${n}" aria-label="Supprimer ce coup">✖</button>
       ${e.heard ? `<span class="log-heard">« ${escapeHtml(e.heard)} »</span>` : ''}
     </li>` : `
     <li class="log-row" style="--car:${state.players[e.player].color}">
-      <span class="log-icon" title="${e.source === 'voice' ? 'Entendu' : 'Touché'}">${e.source === 'voice' ? '🎤' : '👆'}</span>
+      <span class="log-icon" title="${{ voice: 'Entendu', camera: 'Vu à la caméra' }[e.source] || 'Touché'}">${{ voice: '🎤', camera: '📷' }[e.source] || '👆'}</span>
       <select class="log-player" data-entry="${n}" aria-label="Pilote">
         ${state.players.map((p, i) => `<option value="${i}" ${i === e.player ? 'selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}
       </select>
@@ -1216,6 +1392,39 @@ function trackEffects(i, km) {
   t.textContent = `+${km}`;
   fx.appendChild(t);
   setTimeout(() => t.remove(), 1500);
+}
+
+function shield(i) {
+  const fx = $('#road').querySelector(`.car-fx[data-index="${i}"]`);
+  if (!fx) return;
+  fx.classList.remove('shield'); void fx.getBoundingClientRect(); fx.classList.add('shield');
+  setTimeout(() => fx.classList.remove('shield'), 2200);
+}
+
+// Feu d'artifice au-dessus de la ligne d'arrivée
+function fireworks() {
+  const fx = $('#road').querySelector('.fx');
+  if (!fx || !track) return;
+  const colors = ['#ffd31a', '#ff3a3a', '#3fa9f5', '#5be08a', '#ffffff', '#ff8c1a'];
+  for (let b = 0; b < 6; b++) {
+    const base = trackPoint(0, -track.half - 40 - Math.random() * 80);
+    const x = base.x + (Math.random() - 0.5) * 220;
+    const y = base.y + (Math.random() - 0.5) * 120;
+    // Position sur le groupe extérieur, animation sur le groupe intérieur
+    const pos = document.createElementNS(SVG_NS, 'g');
+    pos.setAttribute('transform', `translate(${x} ${y})`);
+    const g = document.createElementNS(SVG_NS, 'g');
+    g.setAttribute('class', 'firework');
+    g.style.animationDelay = `${b * 0.25}s`;
+    pos.appendChild(g);
+    const color = colors[b % colors.length];
+    g.innerHTML = Array.from({ length: 12 }, (_, k) => {
+      const a = (k / 12) * Math.PI * 2;
+      return `<line x1="0" y1="0" x2="${Math.cos(a) * 40}" y2="${Math.sin(a) * 40}" stroke="${color}" stroke-width="5" stroke-linecap="round"/>`;
+    }).join('') + `<circle r="7" fill="#fff"/>`;
+    fx.appendChild(pos);
+    setTimeout(() => pos.remove(), 2600);
+  }
 }
 
 function flash() {
@@ -1647,7 +1856,7 @@ $('#btn-new').addEventListener('click', newGame);
 /* ---------- Navigation ---------- */
 
 function show(screen) {
-  if (screen !== 'race') stopListening();
+  if (screen !== 'race') { stopListening(); if (!$('#scan').hidden) closeScan(); }
   ['setup', 'race', 'win'].forEach((s) => { $(`#screen-${s}`).hidden = s !== screen; });
   $('#btn-home').hidden = screen === 'setup';
   window.scrollTo(0, 0);
@@ -1664,13 +1873,21 @@ $('#btn-home').addEventListener('click', () => {
   newGame();
 });
 
+$('#btn-music').addEventListener('click', () => {
+  state.music = !state.music;
+  if (state.music && state.muted) { state.muted = false; renderSound(); }
+  save(); renderMusic(); sfx.click();
+});
+
+$('#chk-commentator').addEventListener('change', (e) => { state.commentator = e.target.checked; save(); });
+
 function renderSound() {
   $('#btn-sound').textContent = state.muted ? '🔇' : '🔊';
   $('#btn-sound').setAttribute('aria-label', state.muted ? 'Activer le son' : 'Couper le son');
 }
 
 $('#btn-sound').addEventListener('click', () => {
-  state.muted = !state.muted; save(); renderSound(); sfx.click();
+  state.muted = !state.muted; save(); renderSound(); renderMusic(); sfx.click();
   if (state.muted && 'speechSynthesis' in window) window.speechSynthesis.cancel();
 });
 
@@ -1906,7 +2123,7 @@ function whyNotTarget(target, card) {
   return `${t.name} ne roule pas : on ne peut attaquer qu'un pilote qui roule.`;
 }
 
-function applyHeardCard({ card, player, target }, text) {
+function applyHeardCard({ card, player, target }, text, source = 'voice') {
   if (state.players.some((p) => p.km >= state.goal)) return 'done';
   const p = state.players[player];
   const a = ACTIONS[card];
@@ -1919,14 +2136,14 @@ function applyHeardCard({ card, player, target }, text) {
   }
   if (reason) {
     sfx.nope();
-    toast(`🎤 ${p.name} : ${a.name} — impossible. ${reason}`);
+    toast(`${source === 'camera' ? '📷' : '🎤'} ${p.name} : ${a.name} — impossible. ${reason}`);
     say(`Attention ${p.name} : ${reason}`);
     return 'refused';
   }
   // La carte est jouée par celui qui l'annonce, même si ce n'était pas son tour
   state.current = player;
   state.phase = 'play';
-  playAction(card, target, { source: 'voice', heard: text });
+  playAction(card, target, { source, heard: text });
   return a.kind === 'hazard' ? 'wait' : 'done';
 }
 
@@ -1947,6 +2164,232 @@ function applyHeard(i, km, text) {
 $('#btn-listen').addEventListener('click', () => {
   sfx.click();
   if (listen.on) stopListening(); else startListening();
+});
+
+/* ---------- Scanner de cartes : caméra + apprentissage sur la tablette ---------- */
+// MobileNet transforme l'image en « empreinte », un classifieur KNN la compare aux
+// exemples appris avec les vraies cartes de la famille. Rien n'est envoyé sur Internet.
+
+const SCAN_CLASSES = [...CARDS.map((c) => `km${c.km}`), ...Object.keys(ACTIONS), 'none'];
+const SCAN_KEY = 'mille-bornes-scan-v1';
+const SCAN_LIBS = [
+  'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js',
+  'https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js',
+  'https://cdn.jsdelivr.net/npm/@tensorflow-models/knn-classifier@1.2.6/dist/knn-classifier.min.js',
+];
+const SCAN_MIN_CONFIDENCE = 0.75;
+const SCAN_STABLE_FRAMES = 3;
+const scan = { models: null, loading: null, stream: null, timer: 0, mode: 'play', streak: { label: null, n: 0 }, paused: false };
+
+const scanName = (label) => (label.startsWith('km') ? `${label.slice(2)} km` : label === 'none' ? 'Rien (la table)' : ACTIONS[label].name);
+const scanFace = (label) => (label.startsWith('km') ? kmFace(Number(label.slice(2))) : label === 'none'
+  ? '<svg class="face" viewBox="0 0 100 140"><rect x="1" y="1" width="98" height="138" rx="9" fill="#c98a4b"/><text x="50" y="80" text-anchor="middle" font-size="34">🚫</text></svg>'
+  : actFace(label));
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const el = document.createElement('script');
+    el.src = src; el.onload = resolve; el.onerror = () => reject(new Error(`Chargement impossible : ${src}`));
+    document.head.appendChild(el);
+  });
+}
+
+// Chargement à la demande (≈ 20 Mo la première fois, ensuite en cache du navigateur)
+async function loadScanModels() {
+  if (scan.models) return scan.models;
+  if (window.__scanModels) { scan.models = window.__scanModels; return scan.models; } // tests
+  if (!scan.loading) {
+    scan.loading = (async () => {
+      for (const src of SCAN_LIBS) await loadScript(src);
+      const net = await window.mobilenet.load({ version: 2, alpha: 1.0 });
+      const knn = window.knnClassifier.create();
+      const tf = window.tf;
+      const models = {
+        embed: (video) => net.infer(video, true),
+        add: (emb, label) => knn.addExample(emb, label),
+        predict: async (emb) => {
+          if (!knn.getNumClasses()) return null;
+          const r = await knn.predictClass(emb, 5);
+          emb.dispose();
+          return { label: r.label, confidence: r.confidences[r.label] || 0 };
+        },
+        counts: () => knn.getClassExampleCount(),
+        clear: () => knn.clearAllClasses(),
+        dump: () => {
+          const data = knn.getClassifierDataset();
+          return Object.fromEntries(Object.entries(data).map(([label, t]) => {
+            const bytes = new Uint8Array(t.dataSync().buffer);
+            let bin = '';
+            bytes.forEach((b) => { bin += String.fromCharCode(b); });
+            return [label, { shape: t.shape, data: btoa(bin) }];
+          }));
+        },
+        restore: (saved) => {
+          knn.setClassifierDataset(Object.fromEntries(Object.entries(saved).map(([label, { shape, data }]) => {
+            const bin = atob(data);
+            const bytes = new Uint8Array(bin.length);
+            for (let k = 0; k < bin.length; k++) bytes[k] = bin.charCodeAt(k);
+            return [label, tf.tensor2d(new Float32Array(bytes.buffer), shape)];
+          })));
+        },
+      };
+      try { const saved = JSON.parse(localStorage.getItem(SCAN_KEY)); if (saved) models.restore(saved); } catch (e) { /* rien d'appris */ }
+      scan.models = models;
+      return models;
+    })();
+    scan.loading.catch(() => { scan.loading = null; });
+  }
+  return scan.loading;
+}
+
+function saveScanExamples() {
+  try { localStorage.setItem(SCAN_KEY, JSON.stringify(scan.models.dump())); } catch (e) {
+    toast('Impossible d\'enregistrer les exemples sur cet appareil (mémoire pleine ?).');
+  }
+}
+
+const scanStatus = (text) => { $('#scan-status').textContent = text; };
+
+async function startCamera() {
+  if (scan.stream) return true;
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    scanStatus('La caméra n\'est pas disponible ici : il faut ouvrir le jeu par une adresse https (par exemple GitHub Pages).');
+    return false;
+  }
+  try {
+    scan.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 640 } }, audio: false });
+    const video = $('#scan-video');
+    video.srcObject = scan.stream;
+    await video.play().catch(() => {});
+    return true;
+  } catch (e) {
+    scanStatus('La caméra est refusée : autorisez-la dans les réglages du navigateur.');
+    return false;
+  }
+}
+
+function stopCamera() {
+  clearInterval(scan.timer);
+  if (scan.stream) scan.stream.getTracks().forEach((t) => t.stop());
+  scan.stream = null;
+}
+
+async function openScan(mode = 'play') {
+  $('#scan').hidden = false;
+  $('#scan-result').innerHTML = '';
+  scanStatus('Préparation de la caméra…');
+  if (!(await startCamera())) return;
+  scanStatus('Chargement de la reconnaissance (la première fois, ça peut prendre un moment)…');
+  try {
+    await loadScanModels();
+  } catch (e) {
+    scanStatus('Impossible de charger la reconnaissance : vérifiez la connexion Internet (nécessaire la première fois).');
+    return;
+  }
+  const total = Object.values(scan.models.counts()).reduce((a, b) => a + b, 0);
+  setScanMode(total ? mode : 'learn');
+  if (!total) toast('Le jeu ne connaît pas encore tes cartes : apprends-les une fois, c\'est rapide !');
+}
+
+function closeScan() {
+  stopCamera();
+  $('#scan').hidden = true;
+}
+
+function setScanMode(mode) {
+  scan.mode = mode;
+  document.querySelectorAll('.scan-tab').forEach((b) => b.classList.toggle('active', b.dataset.mode === mode));
+  $('#scan-title').textContent = mode === 'learn' ? '🧠 Apprendre mes cartes' : '📷 Montre ta carte';
+  $('#scan-learn').hidden = mode !== 'learn';
+  $('#scan-result').hidden = mode !== 'play';
+  clearInterval(scan.timer);
+  if (mode === 'learn') {
+    renderScanGrid();
+    scanStatus('Touche la vignette de la carte que tu montres à la caméra.');
+  } else {
+    scan.paused = false;
+    scan.streak = { label: null, n: 0 };
+    $('#scan-result').innerHTML = '';
+    scanStatus('Montre une carte devant la caméra…');
+    scan.timer = setInterval(scanTick, 350);
+  }
+}
+
+function renderScanGrid() {
+  const counts = scan.models ? scan.models.counts() : {};
+  $('#scan-grid').innerHTML = SCAN_CLASSES.map((label) => `
+    <button class="scan-tile ${counts[label] ? 'learned' : ''}" data-label="${label}">
+      <span class="scan-tile-face">${scanFace(label)}</span>
+      <span class="scan-tile-name">${scanName(label)}</span>
+      <span class="scan-count">${counts[label] || 0}</span>
+    </button>`).join('');
+}
+
+// Reconnaissance en continu : une carte reconnue plusieurs fois de suite est proposée
+async function scanTick() {
+  if (scan.paused || scan.mode !== 'play' || !scan.models) return;
+  const video = $('#scan-video');
+  if (!video.videoWidth && !window.__scanModels) return;
+  const guess = await scan.models.predict(scan.models.embed(video));
+  if (!guess) return;
+  const sure = guess.label !== 'none' && guess.confidence >= SCAN_MIN_CONFIDENCE;
+  scan.streak = sure && scan.streak.label === guess.label ? { label: guess.label, n: scan.streak.n + 1 } : { label: sure ? guess.label : null, n: sure ? 1 : 0 };
+  scanStatus(guess.label === 'none' ? 'Montre une carte devant la caméra…'
+    : `Je vois : ${scanName(guess.label)} (${Math.round(guess.confidence * 100)} %)`);
+  if (scan.streak.n >= SCAN_STABLE_FRAMES) confirmScan(scan.streak.label);
+}
+
+function confirmScan(label) {
+  scan.paused = true;
+  sfx.ding();
+  $('#scan-result').innerHTML = `
+    <div class="scan-card">${scanFace(label)}</div>
+    <p class="scan-question">C'est bien <b>${scanName(label)}</b> ?</p>
+    <div class="scan-actions">
+      <button id="btn-scan-yes" class="big-btn go">✅ Jouer</button>
+      <button id="btn-scan-no" class="big-btn">❌ Non</button>
+    </div>`;
+  say(`C'est bien ${scanName(label)} ?`);
+  $('#btn-scan-yes').addEventListener('click', () => { closeScan(); playScanned(label); });
+  $('#btn-scan-no').addEventListener('click', () => {
+    $('#scan-result').innerHTML = '';
+    scan.streak = { label: null, n: 0 };
+    scan.paused = false;
+  });
+}
+
+// La carte reconnue passe par les mêmes règles que si on l'avait touchée
+function playScanned(label) {
+  const i = state.current;
+  const p = state.players[i];
+  if (label.startsWith('km')) {
+    const km = Number(label.slice(2));
+    const check = canPlay(i, km);
+    if (!check.ok) { explain(check.reason); return; }
+    addKm(km, i, { source: 'camera' });
+    toast(`📷 ${p.name} +${km} km`, true);
+    return;
+  }
+  applyHeardCard({ card: label, player: i }, '', 'camera');
+}
+
+$('#btn-scan').addEventListener('click', () => { sfx.click(); openScan('play'); });
+$('#btn-scan-close').addEventListener('click', closeScan);
+document.querySelectorAll('.scan-tab').forEach((b) => b.addEventListener('click', () => { if (scan.models) setScanMode(b.dataset.mode); }));
+$('#scan-grid').addEventListener('click', (e) => {
+  const tile = e.target.closest('.scan-tile');
+  if (!tile || !scan.models) return;
+  scan.models.add(scan.models.embed($('#scan-video')), tile.dataset.label);
+  saveScanExamples();
+  sfx.click();
+  renderScanGrid();
+  scanStatus(`Appris : ${scanName(tile.dataset.label)}. Encore une ou deux fois en bougeant un peu la carte !`);
+});
+$('#btn-scan-reset').addEventListener('click', () => {
+  if (!scan.models || !confirm('Oublier toutes les cartes apprises ?')) return;
+  scan.models.clear();
+  try { localStorage.removeItem(SCAN_KEY); } catch (e) { /* rien */ }
+  renderScanGrid();
 });
 
 /* ---------- Widgets : réduire, agrandir, déplacer ---------- */
@@ -2037,6 +2480,8 @@ $('#widgets').addEventListener('pointerdown', (e) => {
 /* ---------- Démarrage ---------- */
 
 renderSound();
+renderMusic();
+$('#chk-commentator').checked = state.commentator;
 applyLayout();
 if (state.players.length) { recomputeKm(); cardTab = autoTab(state.current); }
 renderListen();

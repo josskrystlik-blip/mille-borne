@@ -241,6 +241,33 @@ main { max-width: 1100px; margin: 0 auto; padding: 16px; }
   animation: puff .9s ease-out forwards;
 }
 
+/* ---------- Effets sur le circuit ---------- */
+
+.track-panel { position: relative; }
+.commentary {
+  position: absolute; left: 50%; top: 10px; z-index: 3; margin: 0; max-width: 92%;
+  transform: translateX(-50%); padding: 6px 14px; border-radius: 20px;
+  background: rgba(13, 29, 56, .92); border: 2px solid var(--yellow); color: #fff;
+  font-weight: 800; font-size: 16px; text-align: center; opacity: 0; pointer-events: none;
+}
+.commentary.show { animation: commentary 4.5s ease-out forwards; }
+.track-svg .car-body { transform-box: fill-box; transform-origin: center; }
+.track-svg .car.st-flat .car-body { animation: flat-bounce .7s ease-in-out infinite; }
+.track-svg .car.st-fuel .car-body { animation: sputter 1.4s steps(1) infinite; }
+.track-svg .car.st-accident .car-body { transform: rotate(-9deg); filter: saturate(.6) brightness(.85); }
+.track-svg .car.st-red .car-body { filter: brightness(.9); }
+.track-svg .car-fx > * { display: none; }
+.track-svg .car-fx.st-accident .fx-smoke, .track-svg .car-fx.st-red .fx-light { display: inline; }
+.track-svg .fx-smoke circle { fill: rgba(90, 90, 90, .7); transform-box: fill-box; transform-origin: center; animation: smoke-rise 1.6s ease-out infinite; }
+.track-svg .fx-light { animation: light-blink 1s steps(1) infinite; }
+.track-svg .car-fx .fx-shield-pos { display: inline; }
+.track-svg .car-fx .fx-shield { display: none; }
+.track-svg .car-fx.shield .fx-shield { display: inline; fill: rgba(91, 224, 138, .2); stroke: #5be08a; stroke-width: 5; transform-box: fill-box; transform-origin: center; animation: shield-pop 2s ease-out forwards; }
+.track-svg .firework { transform-box: fill-box; transform-origin: center; opacity: 0; animation: firework 1.4s ease-out forwards; }
+.check-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 15px; cursor: pointer; }
+.check-row input { width: 22px; height: 22px; flex-shrink: 0; }
+.icon-btn.off { opacity: .45; }
+
 /* ---------- Tableau des positions ---------- */
 
 .board { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; margin-top: 14px; }
@@ -440,6 +467,35 @@ body.has-expanded { overflow: hidden; }
 .faq { margin: 0; }
 .faq dt { font-weight: 800; color: #fff3a0; margin-top: 8px; }
 .faq dd { margin: 2px 0 0 0; }
+
+/* ---------- Scanner de cartes ---------- */
+
+.ask-row { display: flex; gap: 8px; max-width: 600px; margin: 10px auto 0; }
+.ask-row .ask-btn { margin: 0; flex: 1; }
+.scan-panel { width: min(620px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; }
+.scan-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+.scan-tab { min-height: 44px; border-radius: 10px; border: 2px solid var(--panel-line); background: #0d1d38; color: #fff; font-weight: 800; font-size: 15px; }
+.scan-tab.active { background: var(--yellow); color: var(--navy); border-color: #fff; }
+.scan-video-wrap { position: relative; border-radius: 12px; overflow: hidden; background: #000; aspect-ratio: 4 / 3; max-height: 42vh; margin: 0 auto; }
+.scan-video-wrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scan-frame { position: absolute; inset: 12% 28%; border: 4px dashed rgba(255, 211, 26, .9); border-radius: 12px; pointer-events: none; }
+.scan-status { margin: 8px 0; text-align: center; color: #fff; font-weight: 700; min-height: 1.3em; }
+.scan-result { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.scan-card { width: 90px; height: 126px; border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 3px 0 rgba(0, 0, 0, .45); }
+.scan-question { margin: 0; color: #fff; font-size: 18px; }
+.scan-question b { color: var(--yellow); }
+.scan-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+.scan-actions .big-btn { font-size: 22px; padding: 10px; }
+.scan-hint { margin: 0 0 8px; color: var(--muted); font-size: 14px; }
+.scan-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+.scan-tile { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 4px; border-radius: 10px; border: 2px solid var(--panel-line); background: var(--navy-2); color: #fff; }
+.scan-tile.learned { border-color: #5be08a; }
+.scan-tile-face { width: 48px; height: 67px; border-radius: 5px; overflow: hidden; background: #fff; }
+.scan-tile-name { font-size: 11px; font-weight: 700; line-height: 1.1; text-align: center; }
+.scan-count { position: absolute; top: 4px; right: 4px; min-width: 22px; height: 22px; border-radius: 11px; background: var(--red); font-size: 12px; font-weight: 900; line-height: 22px; }
+.scan-tile.learned .scan-count { background: #1f9d48; }
+.scan-reset { width: 100%; margin-top: 10px; text-transform: none; }
+#scan .help-panel > .big-btn { margin-top: 12px; }
 
 /* ---------- Écoute de la partie ---------- */
 
@@ -713,6 +769,13 @@ button.turn-left:active { transform: scale(.96); }
   60% { transform: rotate(1deg); }
   100% { transform: rotate(0); }
 }
+@keyframes commentary { 0% { opacity: 0; transform: translate(-50%, -6px); } 8%, 80% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, 0); } }
+@keyframes flat-bounce { 0%, 100% { transform: rotate(-5deg) translateY(0); } 50% { transform: rotate(-7deg) translateY(2px); } }
+@keyframes sputter { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-2px); } 40% { transform: translateX(2px); } 60% { transform: translateX(0); } }
+@keyframes smoke-rise { 0% { opacity: .8; transform: translate(0, 0) scale(.5); } 100% { opacity: 0; transform: translate(-14px, -46px) scale(1.8); } }
+@keyframes light-blink { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+@keyframes shield-pop { 0% { opacity: 0; transform: scale(.3); } 20% { opacity: 1; transform: scale(1.1); } 80% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.3); } }
+@keyframes firework { 0% { opacity: 1; transform: scale(.1); } 60% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.25); } }
 @keyframes wanted {
   0%, 100% { box-shadow: 0 4px 0 rgba(0, 0, 0, .45), 0 0 0 3px var(--yellow), 0 0 0 3px rgba(255, 211, 26, .9); }
   50% { box-shadow: 0 4px 0 rgba(0, 0, 0, .45), 0 0 0 3px var(--yellow), 0 0 0 12px rgba(255, 211, 26, 0); }
@@ -777,7 +840,7 @@ button.turn-left:active { transform: scale(.96); }
     grid-template-areas: "banner zone" "row zone" "ask ask" "listen listen";
   }
   .listen-row { grid-area: listen; margin-top: 0; }
-  .ask-btn { grid-area: ask; margin-top: 0; }
+  .ask-row { grid-area: ask; margin-top: 0; }
   .turn-banner { grid-area: banner; margin: 0; max-width: none; }
   .draw-zone, .play-zone { grid-area: zone; }
   .controls .control-row { grid-area: row; margin: 0; max-width: none; }
@@ -806,6 +869,11 @@ button.turn-left:active { transform: scale(.96); }
   .rules-3 .goal-sub { font-size: 12px; }
   .rule-card { width: 44px; height: 62px; }
   .rule-pair-text { font-size: 13px; }
+  .topbar { padding: 8px 10px; }
+  .topbar .topbar-actions { gap: 5px; }
+  .topbar .icon-btn { width: 38px; height: 38px; font-size: 17px; border-width: 2px; }
+  .topbar .route66 { display: none; }
+  .ask-row .ask-btn { font-size: 13px; padding: 0 4px; }
   .mini-act { width: 54px; height: 76px; }
   .toast { font-size: 15px; }
   .setup-players { grid-template-columns: 1fr; }

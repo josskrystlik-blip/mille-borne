@@ -112,6 +112,35 @@ la pose directement.
 - En mode **Km seulement**, seuls les km et la manche terminée comptent.
 - L'« allonge » (passer de 700 à 1000 km en cours de manche) n'est pas gérée.
 
+## 🎙️ Commentateur, effets et ambiance
+
+- **Commentateur de course** (réglable sur l'écran de départ, panneau Voix) : il commente à voix
+  haute et dans un bandeau sur le circuit les dépassements (« Léo double Papa ! »), la prise de
+  tête, la dernière ligne droite, les attaques (« Aïe ! Papa a crevé ! »), les réparations, les
+  bottes, les coups fourrés, le départ et l'arrivée.
+- **Effets sur le circuit** : fumée qui sort de la voiture accidentée, voiture crevée qui
+  penche et rebondit, moteur en panne qui toussote, feu rouge devant la voiture arrêtée,
+  bouclier vert quand on pose une botte, feu d'artifice sur la ligne d'arrivée.
+- **Ambiance sonore** (synthétisée, aucun fichier) : moteur qui monte en régime selon la carte,
+  klaxon pour une attaque, choc, sifflement du pneu, toussotement, « ding » de réparation,
+  fanfare de botte, foule qui applaudit. Le bouton **🎵** lance une petite musique de course ;
+  **🔊** coupe tout.
+
+## 📷 Montrer une carte à la caméra
+
+Le bouton **📷 Montrer une carte** (widget « Tour de jeu ») reconnaît une carte montrée à la
+caméra de la tablette, puis demande « C'est bien Feu rouge ? » avant de la jouer (mêmes règles
+que si on l'avait touchée ; elle apparaît avec 📷 dans l'historique).
+
+- **Apprendre mes cartes** (une seule fois, environ 5 minutes) : pour chaque sorte de carte, on la
+  montre à la caméra et on touche sa vignette 3 ou 4 fois en la bougeant un peu. Apprendre aussi
+  « Rien » en montrant la table vide. Bonne lumière, carte entière, fond uni.
+- La reconnaissance tourne **sur la tablette** (TensorFlow.js + MobileNet) : aucune image n'est
+  envoyée. Les bibliothèques (≈ 20 Mo) se téléchargent la première fois, il faut donc Internet
+  ce jour-là ; les exemples appris restent sur la tablette.
+- La caméra demande une adresse **https** (GitHub Pages convient). La fiabilité dépend de la
+  lumière : à essayer, et on peut toujours toucher la carte à l'écran.
+
 ## Écran de course en widgets
 
 L'écran est découpé en 5 widgets : **Tour de jeu**, **Circuit**, **Cartes posées**, **Positions** et **Historique**.

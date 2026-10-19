@@ -33,6 +33,7 @@
     </h1>
     <div class="topbar-actions">
       <button id="btn-rules" class="icon-btn" aria-label="Les règles en 1 minute">📖</button>
+      <button id="btn-music" class="icon-btn off" aria-label="Mettre la musique">🎵</button>
       <button id="btn-sound" class="icon-btn" aria-label="Couper le son">🔊</button>
       <button id="btn-home" class="icon-btn" aria-label="Retour au menu" hidden>⏏</button>
     </div>
@@ -70,6 +71,7 @@
           <button id="btn-voice-test" class="small-btn voice-test">▶ Écouter</button>
         </div>
         <p class="voice-hint">Les voix marquées ★ sont les plus naturelles disponibles sur cet appareil.</p>
+        <label class="check-row"><input type="checkbox" id="chk-commentator"> 🎙️ Commentateur de course (dépassements, attaques, arrivée…)</label>
       </div>
 
       <button id="btn-start" class="big-btn go">Départ ▶</button>
@@ -114,7 +116,10 @@
               <button id="btn-undo" class="small-btn">↩ Annuler</button>
               <button id="btn-next" class="small-btn">Pas de km ▶</button>
             </div>
-            <button id="btn-ask" class="small-btn ask-btn">❓ Puis-je jouer cette carte ?</button>
+            <div class="ask-row">
+              <button id="btn-ask" class="small-btn ask-btn">❓ Puis-je jouer cette carte ?</button>
+              <button id="btn-scan" class="small-btn ask-btn scan-btn">📷 Montrer une carte</button>
+            </div>
 
             <!-- Écoute de la partie -->
             <div class="listen-row">
@@ -133,6 +138,7 @@
             <button class="widget-btn" data-action="expand" aria-label="Agrandir">⤢</button>
           </header>
           <div class="widget-body track-panel">
+            <p id="commentary" class="commentary" aria-live="polite"></p>
             <div id="road" class="road"></div>
           </div>
         </section>
@@ -231,6 +237,30 @@
       <p id="rules-mode" class="rules-mode"></p>
       <div id="rules-body" class="rules-body"></div>
       <button id="btn-rules-close" class="big-btn go">C'est parti !</button>
+    </div>
+  </div>
+
+  <!-- Scanner de cartes à la caméra -->
+  <div id="scan" class="overlay help-overlay" hidden>
+    <div class="help-panel scan-panel" role="dialog" aria-labelledby="scan-title">
+      <h2 id="scan-title" class="help-title">📷 Montre ta carte</h2>
+      <div class="scan-tabs">
+        <button class="scan-tab" data-mode="play">📷 Reconnaître</button>
+        <button class="scan-tab" data-mode="learn">🧠 Apprendre mes cartes</button>
+      </div>
+      <div class="scan-video-wrap">
+        <video id="scan-video" playsinline muted autoplay></video>
+        <div class="scan-frame" aria-hidden="true"></div>
+      </div>
+      <p id="scan-status" class="scan-status"></p>
+      <div id="scan-result" class="scan-result"></div>
+      <div id="scan-learn" class="scan-learn" hidden>
+        <p class="scan-hint">Pose une carte devant la caméra, puis touche sa vignette 3 ou 4 fois en la bougeant un peu.
+          Bonne lumière, carte entière, fond uni. Apprends aussi « Rien » en montrant la table vide.</p>
+        <div id="scan-grid" class="scan-grid"></div>
+        <button id="btn-scan-reset" class="small-btn scan-reset">🗑️ Tout réapprendre</button>
+      </div>
+      <button id="btn-scan-close" class="big-btn">Fermer</button>
     </div>
   </div>
 
