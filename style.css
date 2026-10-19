@@ -32,7 +32,7 @@ button { font-family: inherit; cursor: pointer; touch-action: manipulation; colo
 button:disabled { cursor: default; }
 [hidden] { display: none !important; }
 
-.goal-km, .board-km, .pos, .rank-km, .card-corner {
+.goal-km, .board-km, .pos, .rank-km {
   font-family: 'Russo One', Impact, sans-serif;
   font-weight: 400;
 }
@@ -321,12 +321,8 @@ body.has-expanded { overflow: hidden; }
   content: '🚫'; position: absolute; right: 6px; bottom: 6px; font-size: 16px;
 }
 .card.wanted { animation: wanted 1s ease-in-out infinite; }
-.act-card { background: #fbf8f1; }
-.act-card .card-corner { font-family: 'Barlow', sans-serif; font-weight: 800; font-size: clamp(7px, 1.8vw, 10px); letter-spacing: .5px; }
-.act-icon { display: flex; align-items: center; justify-content: center; height: 46%; margin-top: 10px; }
 .act-svg { height: 100%; width: auto; max-width: 80%; }
 .act-emoji { font-size: clamp(26px, 7vw, 46px); line-height: 1; }
-.act-card .card-name { white-space: normal; text-align: center; line-height: 1.05; }
 .turn-need {
   display: block; margin-top: 6px; padding: 3px 8px; border-radius: 8px;
   background: #fff3c4; color: #5c0508; font-size: 14px; font-weight: 700; line-height: 1.2;
@@ -345,7 +341,7 @@ body.has-expanded { overflow: hidden; }
   font-size: 18px; color: #fff; border-left: 6px solid var(--card); padding-left: 8px;
 }
 .ask-cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
-.ask-cards .card { box-shadow: inset 0 0 0 3px #fbf8f1, inset 0 0 0 5px var(--card), 0 3px 0 #000; padding: 6px 2px; }
+.ask-cards .card { box-shadow: 0 3px 0 rgba(0, 0, 0, .45); }
 .ask-verdict {
   display: grid; grid-template-columns: 64px 1fr; gap: 10px; align-items: center;
   padding: 10px; border-radius: 12px; margin-bottom: 8px; color: #fff; font-size: 16px; line-height: 1.3;
@@ -353,7 +349,8 @@ body.has-expanded { overflow: hidden; }
 .ask-verdict.ok { background: #1f6b35; border: 3px solid #5be08a; }
 .ask-verdict.no { background: #6b1a1a; border: 3px solid #ff7b6b; }
 .ask-verdict b { font-size: 20px; }
-.ask-card-icon { display: flex; justify-content: center; align-items: center; height: 70px; }
+.ask-card-icon { display: flex; justify-content: center; align-items: center; height: 84px; }
+.ask-card-icon .face { width: auto; height: 100%; border-radius: 6px; }
 .ask-card-icon svg { height: 100%; width: auto; }
 .ask-card-icon .act-emoji { font-size: 44px; }
 .ask-verdict .big-btn { grid-column: 1 / -1; font-size: 22px; padding: 10px; }
@@ -361,7 +358,8 @@ body.has-expanded { overflow: hidden; }
 
 /* Fenêtre de choix */
 .dialog-body { text-align: center; color: #fff; }
-.dialog-card { height: 90px; display: flex; justify-content: center; align-items: center; margin-bottom: 8px; }
+.dialog-card { height: 120px; display: flex; justify-content: center; align-items: center; margin-bottom: 8px; }
+.dialog-card .face { width: auto; height: 100%; border-radius: 8px; box-shadow: 0 3px 0 rgba(0, 0, 0, .45); }
 .dialog-card svg { height: 100%; width: auto; }
 .dialog-card .act-emoji { font-size: 60px; }
 .dialog-text { font-size: 18px; line-height: 1.35; margin: 0 0 12px; }
@@ -404,14 +402,9 @@ body.has-expanded { overflow: hidden; }
 .pile-top { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .pile-from { font-size: 11px; color: #ffc9c2; text-align: center; }
 .mini-act {
-  display: inline-flex; flex-direction: column; align-items: center; justify-content: space-between;
-  width: 58px; height: 78px; padding: 6px 3px 4px; border-radius: 7px;
-  background: #fbf8f1; box-shadow: inset 0 0 0 3px #fbf8f1, inset 0 0 0 5px var(--card), 0 3px 0 #000;
+  display: inline-block; width: 60px; height: 84px; border-radius: 6px; overflow: hidden;
+  background: #fff; border: 1px solid #bdbdbd; box-shadow: 0 3px 0 rgba(0, 0, 0, .45);
 }
-.mini-act-icon { height: 40px; display: flex; align-items: center; justify-content: center; }
-.mini-act-icon svg { height: 100%; width: auto; }
-.mini-act-icon .act-emoji { font-size: 28px; }
-.mini-act-name { font-size: 8.5px; font-weight: 800; line-height: 1.05; text-align: center; text-transform: uppercase; color: var(--card); }
 .safety-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
 .safety-card { position: relative; display: inline-flex; }
 .safety-card.cf .mini-act { transform: rotate(-14deg); }
@@ -526,13 +519,9 @@ button.turn-left:active { transform: scale(.96); }
   animation: enter .4s cubic-bezier(.3, 1.5, .5, 1) both;
 }
 .mini-card {
-  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
-  width: 54px; height: 76px; padding: 4px;
-  background: #fbf8f1; border-radius: 7px; border: 1px solid #000;
-  box-shadow: inset 0 0 0 3px #fbf8f1, inset 0 0 0 5px var(--card), 0 3px 0 #000;
+  display: inline-block; width: 56px; height: 78px; border-radius: 6px; overflow: hidden;
+  background: #fff; border: 1px solid #bdbdbd; box-shadow: 0 3px 0 rgba(0, 0, 0, .45);
 }
-.mini-card .borne-svg { width: 30px; }
-.mini-animal { font-size: 18px; line-height: 1.1; }
 .help-plus { font-family: 'Russo One', sans-serif; font-size: 24px; color: var(--yellow); }
 .help-eq { font-family: 'Russo One', sans-serif; font-size: 22px; color: #fff; margin-left: 6px; white-space: nowrap; }
 .gauge {
@@ -554,17 +543,11 @@ button.turn-left:active { transform: scale(.96); }
 .deck { position: relative; width: 110px; height: 154px; flex-shrink: 0; margin-top: 30px; }
 .deck-card {
   position: absolute; inset: 0;
-  border-radius: 10px; border: 2px solid #000;
+  border-radius: 10px; border: 1px solid #9e9e9e;
   background:
-    linear-gradient(135deg, transparent 0 46%, rgba(255, 255, 255, .15) 46% 54%, transparent 54%),
-    linear-gradient(180deg, #f0262c, var(--red-dark));
-  box-shadow: inset 0 0 0 5px #fff, inset 0 0 0 8px var(--yellow), 0 3px 0 rgba(0, 0, 0, .4);
-}
-.deck-card::before {
-  content: ''; position: absolute; left: 30%; top: 22%; width: 40%; height: 56%;
-  background: var(--yellow);
-  clip-path: polygon(60% 0, 10% 55%, 45% 55%, 30% 100%, 90% 40%, 55% 40%);
-  filter: drop-shadow(1px 1px 0 #000);
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='24'%3E%3Cpath d='M5 11 Q5 3 11 3 Q17 3 17 11 Z' fill='%23e3262b'/%3E%3Crect x='4.5' y='9' width='13' height='11' rx='3.5' fill='%23fff' stroke='%231f5fbf' stroke-width='2.4'/%3E%3C/svg%3E") center / 22px 24px,
+    #fff;
+  box-shadow: inset 0 0 0 6px #fff, 0 3px 0 rgba(0, 0, 0, .4);
 }
 .deck-card:nth-child(1) { transform: translate(-6px, 6px) rotate(-4deg); }
 .deck-card:nth-child(2) { transform: translate(-3px, 3px) rotate(-2deg); }
@@ -596,27 +579,20 @@ button.turn-left:active { transform: scale(.96); }
 .card {
   position: relative;
   aspect-ratio: 5 / 7;
-  border-radius: 9px; border: 1px solid #000;
-  background: #fbf8f1;
-  box-shadow: inset 0 0 0 4px #fbf8f1, inset 0 0 0 7px var(--card), 0 4px 0 #000;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  padding: 10px 4px;
+  border-radius: 9px; border: 1px solid #bdbdbd;
+  background: #fff;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, .45);
+  padding: 0; overflow: hidden;
   color: #111;
   transition: transform .1s;
 }
+/* Face de carte dessinée (style des cartes du jeu) */
+.face { display: block; width: 100%; height: 100%; }
+.face-title { font-family: 'Barlow', 'Arial Narrow', sans-serif; font-weight: 800; font-style: italic; letter-spacing: -.2px; }
+.face-num { font-family: 'Russo One', Impact, sans-serif; }
+.face-big { font-family: 'Russo One', Impact, sans-serif; letter-spacing: -1px; }
 .card:active:not(:disabled) { transform: translateY(3px) scale(.97); }
 .card:disabled { filter: grayscale(1); opacity: .3; }
-.card-corner {
-  position: absolute; top: 9px; left: 10px;
-  font-size: clamp(11px, 2.6vw, 15px); color: var(--card); line-height: 1;
-}
-.card-borne { width: 58%; margin-top: 8px; }
-.card-animal { font-size: clamp(18px, 4.5vw, 28px); line-height: 1.1; }
-.card-name {
-  font-size: clamp(8px, 2vw, 12px); font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
-  color: var(--card);
-  max-width: 100%; overflow: hidden; text-overflow: ellipsis;
-}
 
 /* ---------- Arrivée ---------- */
 
@@ -676,8 +652,8 @@ button.turn-left:active { transform: scale(.96); }
   100% { transform: rotate(0); }
 }
 @keyframes wanted {
-  0%, 100% { box-shadow: inset 0 0 0 4px #fbf8f1, inset 0 0 0 7px var(--card), 0 4px 0 #000, 0 0 0 0 rgba(255, 211, 26, .9); }
-  50% { box-shadow: inset 0 0 0 4px #fbf8f1, inset 0 0 0 7px var(--card), 0 4px 0 #000, 0 0 0 8px rgba(255, 211, 26, 0); }
+  0%, 100% { box-shadow: 0 4px 0 rgba(0, 0, 0, .45), 0 0 0 3px var(--yellow), 0 0 0 3px rgba(255, 211, 26, .9); }
+  50% { box-shadow: 0 4px 0 rgba(0, 0, 0, .45), 0 0 0 3px var(--yellow), 0 0 0 12px rgba(255, 211, 26, 0); }
 }
 @keyframes listening {
   0%, 100% { box-shadow: 0 0 0 0 rgba(255, 90, 74, .7); }
@@ -762,8 +738,7 @@ button.turn-left:active { transform: scale(.96); }
   main { padding-left: 10px; padding-right: 10px; }
   .log-row select { font-size: 14px; padding: 5px 4px; }
   .table-zones { grid-template-columns: 1fr; padding: 8px; }
-  .mini-act { width: 52px; height: 70px; }
-  .mini-act-icon { height: 34px; }
+  .mini-act { width: 54px; height: 76px; }
   .toast { font-size: 15px; }
   .setup-players { grid-template-columns: 1fr; }
   .setup-car { width: 76px; }
@@ -775,8 +750,7 @@ button.turn-left:active { transform: scale(.96); }
   .board-km small { display: none; }
   .board-left { font-size: 11px; }
   .cards { gap: 5px; }
-  .card { padding: 8px 2px; box-shadow: inset 0 0 0 3px #fbf8f1, inset 0 0 0 5px var(--card), 0 3px 0 #000; }
-  .card-corner { top: 7px; left: 7px; }
+  .card { box-shadow: 0 3px 0 rgba(0, 0, 0, .45); }
   .controls { padding: 10px 8px; }
   .turn-banner { padding: 8px 10px; gap: 6px 8px; }
   .turn-who { gap: 8px; }
@@ -790,9 +764,7 @@ button.turn-left:active { transform: scale(.96); }
   .help-badge { font-size: 10px; padding: 2px 6px; }
   button.turn-left { padding: 4px 6px; }
   .help-title { font-size: 19px; }
-  .mini-card { width: 44px; height: 62px; }
-  .mini-card .borne-svg { width: 24px; }
-  .mini-animal { font-size: 14px; }
+  .mini-card { width: 46px; height: 64px; }
   .help-plus { font-size: 18px; }
   .help-eq { font-size: 17px; }
   .draw-zone { gap: 18px; padding: 8px 4px 14px; }

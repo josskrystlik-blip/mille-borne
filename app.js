@@ -14,12 +14,13 @@ const NUMBERS = [7, 12, 23, 31, 58, 86];
 const DEFAULT_NAMES = ['Pilote 1', 'Pilote 2', 'Pilote 3', 'Pilote 4', 'Pilote 5', 'Pilote 6'];
 
 // Les cartes « étape » du Mille Bornes, avec leur animal
+// (couleurs du grand chiffre, comme sur les cartes du jeu)
 const CARDS = [
-  { km: 25,  emoji: '🐌', name: 'Escargot',   color: '#2e9d4a' },
-  { km: 50,  emoji: '🦆', name: 'Canard',     color: '#0b8a8a' },
-  { km: 75,  emoji: '🦋', name: 'Papillon',   color: '#7b3fbf' },
-  { km: 100, emoji: '🐇', name: 'Lièvre',     color: '#1d63c8' },
-  { km: 200, emoji: '🐦', name: 'Hirondelle', color: '#e0451b' },
+  { km: 25,  emoji: '🐌', name: 'Escargot',   color: '#1aa3d9' },
+  { km: 50,  emoji: '🦆', name: 'Canard',     color: '#e3262b' },
+  { km: 75,  emoji: '🦋', name: 'Papillon',   color: '#1a1a1a' },
+  { km: 100, emoji: '🐇', name: 'Lièvre',     color: '#1aa3d9' },
+  { km: 200, emoji: '🐦', name: 'Hirondelle', color: '#1f5fbf' },
 ];
 
 // L'aide « comment finir » n'apparaît qu'à partir de 200 km de l'arrivée
@@ -48,9 +49,9 @@ const ACTIONS = {
 };
 const KINDS = {
   km: { label: '🛣️ Km', title: 'Kilomètres', color: '#e0451b' },
-  hazard: { label: '⚔️ Attaquer', title: 'Attaques', color: '#d7141a', corner: 'ATTAQUE' },
-  remedy: { label: '🔧 Réparer', title: 'Parades', color: '#1f9d48', corner: 'PARADE' },
-  safety: { label: '⭐ Bottes', title: 'Bottes', color: '#1d63c8', corner: 'BOTTE' },
+  hazard: { label: '⚔️ Attaquer', title: 'Attaques', color: '#e3262b', corner: 'ATTAQUE' },
+  remedy: { label: '🔧 Réparer', title: 'Parades', color: '#5aa51f', corner: 'PARADE' },
+  safety: { label: '⭐ Bottes', title: 'Bottes', color: '#2ea836', corner: 'BOTTE' },
 };
 const actionsOf = (kind) => Object.keys(ACTIONS).filter((id) => ACTIONS[id].kind === kind);
 
@@ -173,6 +174,77 @@ function actionIcon(id) {
     <text x="20" y="25.5" text-anchor="middle" font-family="'Russo One', sans-serif" font-size="15" fill="#999">50</text>
     <path d="M9 31 L31 9 M12 34 L34 12 M6 28 L28 6" stroke="#111" stroke-width="2"/></svg>`;
   return `<span class="act-emoji">${ACTIONS[id].emoji}</span>`;
+}
+
+/* ---------- Faces des cartes, dans le style des cartes du jeu ---------- */
+// Cartes blanches, illustration à plat, titre en couleur repris à l'envers en bas
+
+const LIME = '#a6ce39';
+const FACE_TITLES = {
+  red: ['Stop'], green: ['Roulez'], limit: ['LIMITE DE', 'VITESSE'], end: ['FIN DE LIMITE', 'DE VITESSE'],
+  fuel: ['PANNE', 'D\'ESSENCE'], flat: ['CREVÉ !'], accident: ['ACCIDENT'],
+  gas: ['ESSENCE'], spare: ['ROUE DE', 'SECOURS'], repair: ['RÉPARATIONS'],
+  priority: ['véhicule', 'prioritaire'], tank: ['citerne', 'd\'essence'], puncture: ['increvable'], ace: ['as du', 'volant'],
+};
+const FACE_COLORS = { hazard: '#e3262b', remedy: '#1597c9', safety: '#1a1a1a' };
+
+function faceTitle(lines, color, size) {
+  const text = (y0) => lines.map((l, k) => `<text x="9" y="${y0 + k * (size + 1)}" class="face-title" font-size="${size}" fill="${color}">${l}</text>`).join('');
+  // Le titre en haut à gauche, et le même à l'envers en bas à droite
+  return `${text(16)}<g transform="rotate(180 50 70)">${text(16)}</g>`;
+}
+
+function kmFace(km) {
+  const c = CARDS.find((x) => x.km === km);
+  const size = km >= 100 ? 10 : 12;
+  return `
+  <svg class="face" viewBox="0 0 100 140" aria-hidden="true">
+    <rect x="1" y="1" width="98" height="138" rx="9" fill="#fff"/>
+    <text x="8" y="14" class="face-num" font-size="9" fill="#555">${km}</text>
+    <path d="M10 62 Q28 44 52 52 T90 46 V70 H10 Z" fill="${LIME}"/>
+    <path d="M10 70 Q44 56 90 66 V74 H10 Z" fill="#3aa04a"/>
+    <path d="M30 68 V42 Q30 25 48 25 Q66 25 66 42 V68 Z" fill="#fff" stroke="#1a1a1a" stroke-width="1.6"/>
+    <path d="M30 42 Q30 25 48 25 Q66 25 66 42 Z" fill="#e3262b" stroke="#1a1a1a" stroke-width="1.6"/>
+    <rect x="34" y="45" width="28" height="15" rx="1" fill="#fff" stroke="#1a1a1a" stroke-width="1.2"/>
+    <text x="48" y="56.5" text-anchor="middle" class="face-num" font-size="${size}" fill="#1a1a1a">${km}</text>
+    <text x="79" y="44" text-anchor="middle" font-size="17">${c.emoji}</text>
+    <g transform="rotate(180 50 106)">
+      <text x="50" y="124" text-anchor="middle" class="face-big" font-size="${km >= 100 ? 34 : 44}" fill="${c.color}">${km}</text>
+    </g>
+    <g transform="rotate(180 88 131)"><text x="88" y="134" text-anchor="middle" class="face-num" font-size="8" fill="#555">${km}</text></g>
+  </svg>`;
+}
+
+function trafficLight(on) {
+  return `<rect x="38" y="42" width="24" height="54" rx="6" fill="#1a1a1a"/><rect x="47.5" y="96" width="5" height="16" fill="#1a1a1a"/>
+    <circle cx="50" cy="55" r="7" fill="${on === 'red' ? '#e3262b' : '#555'}"/><circle cx="50" cy="69" r="7" fill="#555"/>
+    <circle cx="50" cy="83" r="7" fill="${on === 'green' ? LIME : '#555'}"/>`;
+}
+
+function faceArt(id) {
+  const a = ACTIONS[id];
+  const emoji = (e, size = 40) => `<text x="50" y="${80 + size * 0.35}" text-anchor="middle" font-size="${size}">${e}</text>`;
+  if (id === 'red') return `<circle cx="66" cy="88" r="20" fill="#e3262b"/>${trafficLight('red')}`;
+  if (id === 'green') return `<circle cx="66" cy="88" r="20" fill="${LIME}"/>${trafficLight('green')}`;
+  if (id === 'limit') return `<rect x="47" y="70" width="6" height="42" fill="#1a1a1a"/>
+    <circle cx="50" cy="66" r="24" fill="#fff" stroke="#e3262b" stroke-width="7"/><text x="50" y="74" text-anchor="middle" class="face-num" font-size="20" fill="#1a1a1a">50</text>`;
+  if (id === 'end') return `<rect x="47" y="70" width="6" height="42" fill="#1a1a1a"/>
+    <circle cx="50" cy="66" r="24" fill="#fff" stroke="#1597c9" stroke-width="4"/><text x="50" y="74" text-anchor="middle" class="face-num" font-size="20" fill="#9aa">50</text>
+    <path d="M28 92 L72 40" stroke="#1597c9" stroke-width="9" stroke-linecap="round"/>`;
+  if (a.kind === 'hazard') return `<path d="M8 104 L92 46 L92 64 L8 122 Z" fill="#e3262b"/>${emoji(a.emoji)}`;
+  if (a.kind === 'remedy') return `<path d="M8 46 L92 104 L92 122 L8 64 Z" fill="${LIME}"/>${emoji(a.emoji)}`;
+  // Bottes : le grand « V » vert des cartes du jeu
+  return `<path d="M12 32 L50 116 L88 32 L72 32 L50 82 L28 32 Z" fill="#2ea836"/>${emoji(a.emoji, 36)}`;
+}
+
+function actFace(id) {
+  const kind = ACTIONS[id].kind;
+  return `
+  <svg class="face" viewBox="0 0 100 140" aria-hidden="true">
+    <rect x="1" y="1" width="98" height="138" rx="9" fill="#fff"/>
+    ${faceArt(id)}
+    ${faceTitle(FACE_TITLES[id], FACE_COLORS[kind], FACE_TITLES[id].some((l) => l.length > 10) ? 9 : 11)}
+  </svg>`;
 }
 
 /* ---------- Sons (synthétisés, aucun fichier) ---------- */
@@ -660,8 +732,7 @@ function renderRace(initial = false) {
 /* ---------- Vue « Cartes posées » : la table de chaque pilote ---------- */
 
 function miniAct(id, extra = '') {
-  return `<span class="mini-act ${extra}" style="--card:${KINDS[ACTIONS[id].kind].color}" title="${ACTIONS[id].name}">
-    <span class="mini-act-icon">${actionIcon(id)}</span><span class="mini-act-name">${ACTIONS[id].name}</span></span>`;
+  return `<span class="mini-act ${extra}" title="${ACTIONS[id].name}">${actFace(id)}</span>`;
 }
 
 // Une pile : les cartes précédentes en petit, puis la carte du dessus
@@ -719,23 +790,14 @@ let cardTab = 'km';
 function kmCardHtml(c, blocked) {
   return `
     <button class="card ${blocked ? 'blocked' : ''}" data-km="${c.km}" style="--card:${c.color}"
-            aria-label="${c.km} kilomètres, ${c.name}">
-      <span class="card-corner">${c.km}</span>
-      <span class="card-borne">${borneSvg(c.km, 'KM')}</span>
-      <span class="card-animal">${c.emoji}</span>
-      <span class="card-name">${c.name}</span>
-    </button>`;
+            aria-label="${c.km} kilomètres, ${c.name}">${kmFace(c.km)}</button>`;
 }
 
 function actionCardHtml(id, blocked, wanted = false) {
   const kind = ACTIONS[id].kind;
   return `
     <button class="card act-card ${blocked ? 'blocked' : ''} ${wanted ? 'wanted' : ''}" data-card="${id}"
-            style="--card:${KINDS[kind].color}" aria-label="${ACTIONS[id].name}">
-      <span class="card-corner">${KINDS[kind].corner}</span>
-      <span class="act-icon">${actionIcon(id)}</span>
-      <span class="card-name">${ACTIONS[id].name}</span>
-    </button>`;
+            style="--card:${KINDS[kind].color}" aria-label="${ACTIONS[id].name}">${actFace(id)}</button>`;
 }
 
 // Ce qui s'affiche au-dessus de la voiture : pourquoi elle est arrêtée
@@ -848,7 +910,7 @@ function chooseTarget(card) {
   const i = state.current;
   const ok = attackTargets(i, card);
   const others = state.players.map((t, k) => k).filter((k) => k !== i);
-  dialog(`Qui attaques-tu avec <b>${ACTIONS[card].name}</b> ?`, `<div class="dialog-card">${actionIcon(card)}</div>`, [
+  dialog(`Qui attaques-tu avec <b>${ACTIONS[card].name}</b> ?`, `<div class="dialog-card">${actFace(card)}</div>`, [
     ...others.map((k) => {
       const t = state.players[k];
       const why = ok.includes(k) ? '' : has(t, ACTIONS[card].safety) ? ' (protégé par sa botte)'
@@ -872,7 +934,7 @@ function askCoupFourre(i, target, card) {
   };
   setTimeout(() => {
     dialog(`Coup fourré ?`,
-      `<div class="dialog-card">${actionIcon(safety)}</div>
+      `<div class="dialog-card">${actFace(safety)}</div>
        <p class="dialog-text"><b>${escapeHtml(t.name)}</b>, as-tu la botte <b>${ACTIONS[safety].name}</b> dans ta main ?
        Si oui, pose-la tout de suite et crie « Coup fourré ! »</p>`, [
         { label: '⭐ Oui, coup fourré !', cls: 'go', onClick: () => {
@@ -1171,7 +1233,7 @@ function judge(card) {
   const i = state.current;
   const check = canPlay(i, card);
   const name = typeof card === 'number' ? `${card} km` : ACTIONS[card].name;
-  const icon = typeof card === 'number' ? borneSvg(card, 'KM') : actionIcon(card);
+  const icon = typeof card === 'number' ? kmFace(card) : actFace(card);
   const v = $('#ask-verdict');
   v.className = `ask-verdict ${check.ok ? 'ok' : 'no'}`;
   v.innerHTML = `
@@ -1244,8 +1306,7 @@ function combos(left) {
 }
 
 function miniCard(km) {
-  const c = CARDS.find((x) => x.km === km);
-  return `<span class="mini-card" style="--card:${c.color}">${borneSvg(km, 'KM')}<span class="mini-animal">${c.emoji}</span></span>`;
+  return `<span class="mini-card">${kmFace(km)}</span>`;
 }
 
 function showHelp() {

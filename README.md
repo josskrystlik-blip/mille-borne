@@ -26,6 +26,13 @@ avec une jauge jusqu'au drapeau. Sous les cartes, un tableau des positions (P1, 
 7. **↩ Annuler** retire le dernier ajout en cas d'erreur.
 8. Comme dans le vrai jeu, il faut arriver **pile** à l'objectif : les cartes trop grandes sont grisées.
 
+## Look des cartes
+
+Les cartes à l'écran reprennent le style des cartes du jeu (édition Dujardin actuelle), redessinées :
+cartes blanches ; pour les km, la borne rouge et blanche dans le paysage vert avec l'animal et le
+grand chiffre à l'envers ; titres rouges pour les attaques, bleus avec bande verte pour les parades,
+grand « V » vert pour les bottes ; le dos de la pioche aux petites bornes bleues et rouges.
+
 ## Règles complètes : attaques, parades et bottes
 
 Sur l'écran de départ, **Règles** permet de choisir :
