@@ -308,8 +308,18 @@ function renderMode(screen = state.screen) {
   b.textContent = display[1];
   b.setAttribute('aria-label', child ? 'Changer d\'affichage : garder le doigt appuyé' : 'Changer d\'affichage');
   if (child && screen === 'race') document.querySelectorAll('.widget.expanded').forEach((w) => toggleExpand(w.dataset.widget));
-  refitTrack();
+  applyCamera();
+  // Passage 2D ↔ 3D : on redessine le circuit
+  if (screen === 'race' && state.screen === 'race' && track && track.is3d !== is3D()) { buildRoad(); renderRace(true); }
+  else refitTrack();
 }
+
+$('#cam-buttons').addEventListener('click', (e) => {
+  const b = e.target.closest('.cam-btn'); if (!b) return;
+  const was3d = is3D();
+  state.camera = b.dataset.cam; save(); sfx.click();
+  if (was3d !== is3D()) { buildRoad(); renderRace(true); } else applyCamera();
+});
 
 function setMode(mode) {
   state.uiMode = mode; save(); renderMode(); sfx.click();

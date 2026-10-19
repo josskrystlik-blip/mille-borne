@@ -18,6 +18,24 @@ module.exports = async function display(page) {
   assert.equal(await page.textContent('#btn-mode'), '🎩');
   await noHorizontalScroll(page);
 
+  // Circuit en 3D : voitures vues de dessus et caméras
+  const has = (cls) => page.evaluate((c) => document.body.classList.contains(c), cls);
+  assert.ok(await has('cam-3d'), 'le circuit est en 3D par défaut');
+  assert.equal(await page.locator('.car3d').count(), 2);
+  assert.equal(await page.locator('.tag3d').count(), 2);
+  await page.click('.cam-btn[data-cam="dessus"]');
+  assert.equal(await page.evaluate(() => document.querySelector('#road').style.getPropertyValue('--tilt')), '22deg');
+  assert.equal(await page.getAttribute('.cam-btn[data-cam="dessus"]', 'aria-pressed'), 'true');
+  await page.click('.cam-btn[data-cam="2d"]');
+  assert.ok(!(await has('cam-3d')));
+  assert.equal(await page.locator('.car3d').count(), 0);
+  assert.ok(await page.isVisible('.track-svg .car[data-index="0"]'));
+  await page.click('.cam-btn[data-cam="tv"]');
+  assert.ok(await has('cam-3d'));
+  assert.equal((await stateOf(page)).camera, 'tv');
+  await page.click('.car3d[data-index="1"]', { force: true });
+  await noHorizontalScroll(page);
+
   // Mémorisé après rechargement
   await page.reload();
   assert.ok(await page.evaluate(() => document.body.classList.contains('theme-adult')));
@@ -38,4 +56,6 @@ module.exports = async function display(page) {
   assert.equal((await stateOf(page)).uiMode, 'family');
   assert.ok(await page.evaluate(() => !document.body.classList.contains('theme-adult')));
   assert.ok(await page.isVisible('.scenery'));
+  assert.ok(!(await page.evaluate(() => document.body.classList.contains('cam-3d'))), 'la 3D est réservée à l\'affichage Adulte');
+  assert.ok(await page.isHidden('#cam-buttons'));
 };

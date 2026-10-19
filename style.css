@@ -1019,3 +1019,66 @@ body.theme-adult {
 .theme-adult .commentary { font-style: normal; }
 .theme-adult .confetti { display: none; }
 .theme-adult .countdown-text { font-weight: 800; }
+
+/* ---------- Circuit en 3D (affichage Adulte) ---------- */
+.cam-buttons { display: none; }
+.theme-adult .cam-buttons {
+  display: flex; justify-content: flex-end; gap: 4px; flex-wrap: wrap;
+  margin: 0 0 6px auto; width: fit-content; padding: 4px;
+  background: #161b22; border: 1px solid var(--panel-line); border-radius: 10px;
+}
+.cam-btn {
+  min-height: 36px; padding: 0 12px; border: 0; border-radius: 7px; background: transparent;
+  color: #c4ccd6; font: 600 14px 'Barlow', sans-serif;
+}
+.cam-btn[aria-pressed="true"] { background: var(--yellow); color: #1b2129; }
+.stand-layer { display: none; }
+
+.cam-3d #road {
+  position: relative; overflow: hidden; container-type: inline-size;
+  perspective: 1400px; perspective-origin: 50% -10%;
+}
+.cam-3d .stage3d {
+  position: absolute; left: 0; right: 0; top: 50%;
+  transform-style: preserve-3d;
+  transform: translateY(-50%) scale(var(--zoom)) rotateX(var(--tilt)) rotateZ(var(--spin));
+  transition: transform .9s ease;
+}
+.cam-3d .track-svg { max-height: none; width: 100%; }
+.cam-3d .track-svg :is(.cars, .halo, .track-borne, .tag-text, .statuses) { display: none; }
+.cam-3d .stand-layer { display: block; position: absolute; inset: 0; transform-style: preserve-3d; pointer-events: none; }
+
+/* Voitures posées à plat sur la piste, vues de dessus */
+.car3d {
+  position: absolute; pointer-events: auto; cursor: pointer;
+  transform: translate(-50%, -50%) rotate(var(--angle, 0deg)) translateZ(4px);
+}
+.car3d .top-car { display: block; width: 100%; height: auto; position: relative; }
+.car3d-shadow {
+  position: absolute; inset: 14% 6%; border-radius: 40%;
+  background: rgba(0, 0, 0, .35); filter: blur(4px); transform: translate(1px, 3px);
+}
+.car3d:not(.active) { opacity: .8; }
+.car3d.active .top-car { outline: 2px solid var(--yellow); outline-offset: 3px; border-radius: 6px; }
+.car3d.st-accident .top-car { transform: rotate(-12deg); filter: saturate(.5) brightness(.8); }
+.car3d.st-flat .top-car { animation: flat-bounce .7s ease-in-out infinite; }
+.car3d.st-fuel .top-car { animation: sputter 1.4s steps(1) infinite; }
+
+/* Bornes et étiquettes debout, tournées vers la caméra */
+.borne3d, .tag3d {
+  position: absolute; width: 0; height: 0; transform-style: preserve-3d;
+  transform: translateZ(2px) rotateZ(calc(-1 * var(--spin))) rotateX(calc(-1 * var(--tilt)));
+  transition: transform .9s ease;
+}
+.borne3d svg { position: absolute; left: 0; bottom: 0; width: 3.2cqw; min-width: 20px; height: auto; transform: translateX(-50%); }
+.tag3d > span {
+  position: absolute; left: 0; bottom: 1.6cqw; transform: translateX(-50%);
+  white-space: nowrap; padding: 2px 8px; border-radius: 6px;
+  font: 700 max(11px, 1.6cqw) 'Barlow', sans-serif; color: #e9edf2;
+  background: rgba(18, 22, 28, .86); border: 1px solid var(--panel-line); border-left: 3px solid var(--car);
+}
+.tag3d.active { z-index: 2; }
+.tag3d.active > span { background: var(--yellow); border-color: var(--yellow); color: #1b2129; font-size: max(13px, 1.9cqw); }
+@media (prefers-reduced-motion: reduce) {
+  .cam-3d .stage3d, .borne3d, .tag3d { transition: none; }
+}

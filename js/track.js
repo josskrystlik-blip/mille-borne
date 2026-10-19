@@ -54,8 +54,37 @@ function trackPath(f0, f1, off = 0) {
   return d;
 }
 
+// En 3D, le circuit reste en largeur : la perspective le rend moins haut
 function isPortrait() {
-  return $('#road').clientWidth < 600;
+  return !is3D() && $('#road').clientWidth < 600;
+}
+
+/* ---------- Circuit en 3D (affichage Adulte) ---------- */
+
+const CAMERAS = {
+  '2d': { label: '2D' },
+  tv: { label: 'Vue TV', tilt: 56, spin: 0, zoom: 0.96 },
+  dessus: { label: 'Dessus', tilt: 22, spin: 0, zoom: 0.94 },
+  virage: { label: 'Virage', tilt: 60, spin: -24, zoom: 0.92 },
+};
+
+function is3D() {
+  return state.uiMode === 'adult' && state.camera !== '2d' && !!CAMERAS[state.camera];
+}
+
+// Le sol du circuit bascule en perspective ; les éléments « debout » se tournent vers la caméra
+function applyCamera() {
+  const on = is3D();
+  document.body.classList.toggle('cam-3d', on);
+  document.querySelectorAll('.cam-btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.cam === state.camera)));
+  const road = $('#road');
+  if (!on) { road.style.removeProperty('aspect-ratio'); return; }
+  const cam = CAMERAS[state.camera];
+  road.style.setProperty('--tilt', `${cam.tilt}deg`);
+  road.style.setProperty('--spin', `${cam.spin}deg`);
+  road.style.setProperty('--zoom', cam.zoom);
+  const flat = TRACK_H / TRACK_W;
+  road.style.aspectRatio = `1 / ${(flat * Math.cos(cam.tilt * Math.PI / 180) * cam.zoom + 0.2).toFixed(3)}`;
 }
 
 function buildRoad() {
@@ -84,7 +113,23 @@ function buildRoad() {
   const mid = track.portrait ? { x: TRACK_H / 2, y: TRACK_W / 2 } : { x: TRACK_W / 2, y: TRACK_H / 2 };
   const d = 7 / track.length;
 
+  // Calque 3D : bornes et étiquettes debout, voitures vues de dessus (positions en % du circuit)
+  const pct = (pt) => `left:${(pt.x / vw * 100).toFixed(2)}%; top:${(pt.y / vh * 100).toFixed(2)}%`;
+  track.is3d = is3D();
+  const stand = !track.is3d ? '' : [
+    ...Array.from({ length: Math.floor(goal / 100) }, (_, k) => {
+      const km = (k + 1) * 100;
+      return `<div class="borne3d" style="${pct(trackPoint(km / goal, half + 34))}">${borneSvg(km, 'KM')}</div>`;
+    }),
+    ...state.players.map((p, i) => `
+      <div class="car3d" data-index="${i}" style="width:${(carW / vw * 100).toFixed(2)}%">
+        <span class="car3d-shadow"></span>${topCarSvg(p.color)}
+      </div>
+      <div class="tag3d" data-index="${i}" style="--car:${p.color}"><span></span></div>`),
+  ].join('');
+
   $('#road').innerHTML = `
+    <div class="stage3d">
     <svg class="track-svg" viewBox="0 0 ${vw} ${vh}" role="img" aria-label="Circuit de la course">
       <path class="kerb-base" d="${loop(half + 6)}"/>
       <path class="kerb" d="${loop(half + 6)}"/>
@@ -122,7 +167,10 @@ function buildRoad() {
         </g>`).join('')}</g>
       <g class="fx"></g>
       <text class="tag-text"></text>
-    </svg>`;
+    </svg>
+    <div class="stand-layer">${stand}</div>
+    </div>`;
+  applyCamera();
 }
 
 // Place voitures, traînées, halo et étiquette selon les km affichés
@@ -149,6 +197,7 @@ function placeCars() {
     fx.querySelector('.fx-smoke').setAttribute('transform', `translate(${c.x} ${c.y})`);
     fx.querySelector('.fx-shield-pos').setAttribute('transform', `translate(${c.x} ${c.y})`);
     fx.querySelector('.fx-light').setAttribute('transform', `translate(${ahead.x} ${ahead.y})`);
+    if (track.is3d) place3D(p, i, trackPoint(f - carW / 2 / length, off), vw0(), vh0());
     if (i === state.current) {
       const halo = road.querySelector('.halo');
       halo.setAttribute('transform', `translate(${c.x} ${c.y}) rotate(${c.angle})`);
@@ -157,6 +206,27 @@ function placeCars() {
       tag.setAttribute('y', c.y - carH / 2 - (statusShown(p) ? 44 : 14));
     }
   });
+}
+
+const vw0 = () => (track.portrait ? TRACK_H : TRACK_W);
+const vh0 = () => (track.portrait ? TRACK_W : TRACK_H);
+
+function place3D(p, i, c, vw, vh) {
+  const road = $('#road');
+  const car = road.querySelector(`.car3d[data-index="${i}"]`);
+  const svgCar = road.querySelector(`.car[data-index="${i}"]`);
+  car.style.left = `${(c.x / vw * 100).toFixed(2)}%`;
+  car.style.top = `${(c.y / vh * 100).toFixed(2)}%`;
+  car.style.setProperty('--angle', `${c.angle.toFixed(1)}deg`);
+  car.setAttribute('class', svgCar.getAttribute('class').replace(/\bcar\b/, 'car3d'));
+  const tag = road.querySelector(`.tag3d[data-index="${i}"]`);
+  tag.style.left = `${(c.x / vw * 100).toFixed(2)}%`;
+  tag.style.top = `${(c.y / vh * 100).toFixed(2)}%`;
+  tag.classList.toggle('active', i === state.current);
+  const left = state.goal - p.km;
+  const text = `${p.name}${i === state.current ? (left > 0 ? ` · reste ${left}` : ' 🏁') : ''} ${statusIcon(p)}`.trim();
+  const span = tag.firstElementChild;
+  if (span.textContent !== text) span.textContent = text;
 }
 
 function animateCars() {

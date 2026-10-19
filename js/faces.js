@@ -59,6 +59,19 @@ function borneSvg(label, cap = '', cls = 'borne-svg', attrs = '') {
   </svg>`;
 }
 
+// Voiture de course vue de dessus (circuit en 3D), l'avant vers la droite
+function topCarSvg(color) {
+  return `
+  <svg class="top-car" viewBox="0 0 54 26" aria-hidden="true">
+    <rect x="6" y="1" width="9" height="5" rx="1.5" fill="#15181c"/><rect x="6" y="20" width="9" height="5" rx="1.5" fill="#15181c"/>
+    <rect x="37" y="1" width="9" height="5" rx="1.5" fill="#15181c"/><rect x="37" y="20" width="9" height="5" rx="1.5" fill="#15181c"/>
+    <path d="M3 8 Q3 4 8 4 L44 5 Q52 6 53 13 Q52 20 44 21 L8 22 Q3 22 3 18 Z" fill="${color}"/>
+    <rect x="0" y="5" width="4" height="16" rx="1" fill="${color}"/>
+    <path d="M20 8 L33 8 Q37 13 33 18 L20 18 Q18 13 20 8 Z" fill="#0f1317" opacity=".85"/>
+    <rect x="9" y="12" width="36" height="2" fill="#fff" opacity=".55"/>
+  </svg>`;
+}
+
 // Dessin d'une carte attaque / parade / botte
 function actionIcon(id) {
   const light = (on) => `<svg class="act-svg" viewBox="0 0 26 52"><rect x="2" y="2" width="22" height="48" rx="7" fill="#222"/>

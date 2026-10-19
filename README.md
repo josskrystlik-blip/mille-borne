@@ -153,6 +153,9 @@ bouton en haut à droite :
 - **🎩 Adulte** : toutes les options avec un **look sobre** : couleurs sombres et dorées,
   typographie classique, sans décor ni voitures à yeux, animations discrètes. Les cartes gardent
   l'apparence des vraies cartes.
+  Le **circuit y est en 3D** : piste vue en perspective, voitures vues de dessus avec leur ombre,
+  bornes et prénoms debout au bord de la piste. Des boutons au-dessus du circuit changent la
+  caméra : **Vue TV**, **Dessus**, **Virage** (rotation animée) ou **2D** (le circuit à plat habituel).
 Si l'écoute vocale tourne, un petit voyant 🎤 reste allumé dans la barre du haut. Le choix est mémorisé.
 
 ## Écran de course en widgets

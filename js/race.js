@@ -705,7 +705,7 @@ $('#ask').addEventListener('click', (e) => {
 });
 
 $('#road').addEventListener('click', (e) => {
-  const car = e.target.closest('.car'); if (car) select(Number(car.dataset.index));
+  const car = e.target.closest('.car, .car3d'); if (car) select(Number(car.dataset.index));
 });
 
 $('#board').addEventListener('click', (e) => {
