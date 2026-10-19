@@ -50,6 +50,17 @@ Avec les règles complètes, après **Jouer ▶** on choisit sa carte dans 4 ong
 - **Botte** : elle protège pour toute la partie et on rejoue.
 - **Je jette ▶** : quand on ne peut rien poser, on jette une carte et c'est au suivant.
 
+### 🃏 Cartes posées
+
+Le widget **Cartes posées** montre la table de chaque pilote, comme dans le vrai jeu (sans les
+cartes km, que le circuit montre déjà) :
+- **Bataille** : la carte du dessus en grand (feu vert, attaque reçue avec qui l'a posée, ou
+  réparation) et les cartes précédentes en petit ;
+- **Vitesse** : limitation de vitesse ou fin de limitation ;
+- **Bottes** : celles obtenues par coup fourré sont posées de travers avec « Coup fourré ! ».
+Un badge résume l'état : « Roule », « Roule, limité à 50 » ou « Arrêté : il lui faut … ».
+Toucher la zone d'un pilote lui donne la main.
+
 ### ❓ Puis-je jouer cette carte ?
 
 Le bouton ouvre toutes les cartes du jeu : l'enfant touche celle qu'il a dans la main et le jeu
@@ -59,7 +70,7 @@ la pose directement.
 
 ## Écran de course en widgets
 
-L'écran est découpé en 4 widgets : **Tour de jeu**, **Circuit**, **Positions** et **Historique**.
+L'écran est découpé en 5 widgets : **Tour de jeu**, **Circuit**, **Cartes posées**, **Positions** et **Historique**.
 - ▾ réduit un widget, ⤢ l'agrandit en plein écran (✕ pour revenir) ;
 - on fait **glisser sa barre de titre** pour changer l'ordre (par exemple le circuit en haut).
 La disposition est mémorisée.

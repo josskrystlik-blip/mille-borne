@@ -27,7 +27,7 @@ const HELP_FROM = 200;
 const HELP_MAX_CARDS = 4;
 const HELP_MAX_COMBOS = 6;
 
-const WIDGETS = ['play', 'track', 'board', 'log'];
+const WIDGETS = ['play', 'track', 'table', 'board', 'log'];
 
 // Les autres cartes du Mille Bornes : attaques (rouges), parades (vertes), bottes (bleues)
 const ACTIONS = {
@@ -654,7 +654,65 @@ function renderRace(initial = false) {
   $('.draw-title').textContent = `${cur.name}, pioche une carte !`;
   $('#btn-undo').disabled = state.log.length === 0;
   renderLog();
+  renderTable();
 }
+
+/* ---------- Vue « Cartes posées » : la table de chaque pilote ---------- */
+
+function miniAct(id, extra = '') {
+  return `<span class="mini-act ${extra}" style="--card:${KINDS[ACTIONS[id].kind].color}" title="${ACTIONS[id].name}">
+    <span class="mini-act-icon">${actionIcon(id)}</span><span class="mini-act-name">${ACTIONS[id].name}</span></span>`;
+}
+
+// Une pile : les cartes précédentes en petit, puis la carte du dessus
+function pileHtml(pile, empty) {
+  if (!pile.length) return `<span class="pile-empty">${empty}</span>`;
+  const top = pile[pile.length - 1];
+  const older = pile.slice(-4, -1);
+  const from = top.from !== undefined ? `<span class="pile-from">posée par ${escapeHtml(state.players[top.from].name)}</span>` : '';
+  return `
+    ${older.length ? `<span class="pile-older">${older.map((c) => `<span class="older-chip" style="--card:${KINDS[ACTIONS[c.card].kind].color}" title="${ACTIONS[c.card].name}">${actionIcon(c.card)}</span>`).join('<i>›</i>')}<i>›</i></span>` : ''}
+    <span class="pile-top">${miniAct(top.card)}${from}</span>`;
+}
+
+function zoneState(p) {
+  if (p.km >= state.goal) return { cls: 'ok', text: '🏁 Arrivé !' };
+  const need = needed(p);
+  if (need) return { cls: 'stop', text: `Arrêté : il lui faut ${ACTIONS[need].name}` };
+  if (p.limited) return { cls: 'slow', text: 'Roule, limité à 50' };
+  return { cls: 'ok', text: 'Roule' };
+}
+
+function renderTable() {
+  const box = $('#table');
+  if (!fullRules()) {
+    box.innerHTML = '<p class="table-empty">En mode « Km seulement », les cartes posées ne sont pas suivies.</p>';
+    return;
+  }
+  box.innerHTML = state.players.map((p, i) => {
+    const st = zoneState(p);
+    return `
+    <div class="zone ${i === state.current ? 'active' : ''}" data-index="${i}" style="--car:${p.color}" role="button" tabindex="0">
+      <div class="zone-head">
+        <span class="zone-car">${carSvg(p.color, p.number)}</span>
+        <span class="zone-name">${escapeHtml(p.name)}</span>
+        <span class="zone-state ${st.cls}">${st.text}</span>
+      </div>
+      <div class="zone-piles">
+        <div class="pile"><span class="pile-label">Bataille</span>${pileHtml(p.battlePile, 'Pas encore de feu vert')}</div>
+        <div class="pile"><span class="pile-label">Vitesse</span>${pileHtml(p.speedPile, 'Pas de limitation')}</div>
+        <div class="pile pile-safeties"><span class="pile-label">Bottes</span>
+          ${p.safetyCards.length ? `<span class="safety-row">${p.safetyCards.map((c) => `<span class="safety-card ${c.cf ? 'cf' : ''}">${miniAct(c.card)}${c.cf ? '<span class="cf-badge">Coup fourré !</span>' : ''}</span>`).join('')}</span>`
+            : '<span class="pile-empty">Aucune botte</span>'}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+$('#table').addEventListener('click', (e) => {
+  const zone = e.target.closest('.zone'); if (zone) select(Number(zone.dataset.index));
+});
 
 let cardTab = 'km';
 
@@ -920,20 +978,33 @@ function canPlay(i, card) {
 
 // L'état de chaque pilote est rejoué à partir de l'historique des coups
 function recomputeKm() {
-  state.players.forEach((p) => { p.km = 0; p.n200 = 0; p.battle = 'none'; p.before = 'none'; p.limited = false; p.safeties = []; });
+  state.players.forEach((p) => {
+    p.km = 0; p.n200 = 0; p.battle = 'none'; p.before = 'none'; p.limited = false; p.safeties = [];
+    p.battlePile = []; p.speedPile = []; p.safetyCards = [];
+  });
   state.log.forEach((e) => {
     const p = state.players[e.player];
     const a = ACTIONS[e.card];
     if (!a) { p.km += e.km; if (e.km === 200) p.n200 += 1; return; }
     if (a.kind === 'hazard') {
       const t = state.players[e.target];
-      if (e.card === 'limit') t.limited = true; else { t.before = t.battle; t.battle = e.card; }
+      if (e.card === 'limit') { t.limited = true; t.speedPile.push({ card: e.card, from: e.player }); }
+      else { t.before = t.battle; t.battle = e.card; t.battlePile.push({ card: e.card, from: e.player }); }
     } else if (a.kind === 'remedy') {
+      if (e.card === 'end') { p.limited = false; p.speedPile.push({ card: e.card }); return; }
+      p.battlePile.push({ card: e.card });
       if (e.card === 'green') p.battle = 'green';
-      else if (e.card === 'end') p.limited = false;
       else if (p.battle === a.cures) p.battle = 'fixed';
     } else {
       p.safeties.push(e.card);
+      p.safetyCards.push({ card: e.card, cf: !!e.cf });
+      // Coup fourré : la carte d'attaque est mise de côté, elle ne reste pas sur la pile
+      if (e.cf) {
+        [p.battlePile, p.speedPile].forEach((pile) => {
+          const top = pile[pile.length - 1];
+          if (top && a.protects.includes(top.card) && top.from !== undefined) pile.pop();
+        });
+      }
       if (a.protects.includes('limit')) p.limited = false;
       // Coup fourré : l'attaque est annulée, la voiture continue comme avant ;
       // sinon l'attaque est réparée mais il faut un feu vert (sauf Véhicule prioritaire)
@@ -1471,8 +1542,13 @@ const widget = (name) => document.querySelector(`.widget[data-widget="${name}"]`
 
 function applyLayout() {
   const box = $('#widgets');
-  const saved = (state.layout.order || []).filter((w) => WIDGETS.includes(w));
-  [...saved, ...WIDGETS.filter((w) => !saved.includes(w))].forEach((name) => box.appendChild(widget(name)));
+  const order = (state.layout.order || []).filter((w) => WIDGETS.includes(w));
+  WIDGETS.forEach((w, k) => {
+    if (order.includes(w)) return;
+    const after = order.indexOf(WIDGETS[k - 1]);
+    order.splice(after + 1, 0, w);
+  });
+  order.forEach((name) => box.appendChild(widget(name)));
   WIDGETS.forEach((name) => setCollapsed(name, !!(state.layout.collapsed || {})[name], false));
 }
 

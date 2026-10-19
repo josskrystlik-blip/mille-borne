@@ -373,6 +373,54 @@ body.has-expanded { overflow: hidden; }
 .target-btn .dot { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; flex-shrink: 0; }
 .cancel-btn { font-size: 18px !important; background: transparent; }
 
+/* ---------- Vue « Cartes posées » ---------- */
+
+.table-zones { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 10px; padding: 10px; }
+.table-empty { margin: 0; padding: 14px; color: var(--muted); font-size: 15px; }
+.zone {
+  background: var(--navy-2); border: 2px solid var(--panel-line); border-left: 8px solid var(--car);
+  border-radius: 12px; padding: 8px 10px 10px; cursor: pointer; min-width: 0;
+}
+.zone.active { border-color: var(--yellow); border-left-color: var(--car); box-shadow: 0 0 0 3px var(--yellow); }
+.zone-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; min-width: 0; }
+.zone-car { width: 54px; flex-shrink: 0; }
+.zone-name { font-size: 18px; font-weight: 800; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zone-state { margin-left: auto; padding: 2px 8px; border-radius: 10px; font-size: 13px; font-weight: 800; text-align: right; }
+.zone-state.ok { background: #1f6b35; color: #d9ffe4; }
+.zone-state.stop { background: #8c0a0e; color: #ffe0dc; }
+.zone-state.slow { background: #8a5a00; color: #fff3c4; }
+.zone-piles { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1.5fr); gap: 8px; }
+.pile {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0;
+  padding: 6px 4px; border-radius: 10px; background: rgba(0, 0, 0, .25); border: 2px dashed rgba(255, 255, 255, .15);
+}
+.pile-label { font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+.pile-empty { font-size: 12px; color: #7f93b5; text-align: center; padding: 18px 2px; }
+.pile-older { display: flex; align-items: center; gap: 2px; opacity: .75; }
+.pile-older i { font-style: normal; color: var(--muted); font-size: 12px; }
+.older-chip { display: flex; width: 24px; height: 28px; align-items: center; justify-content: center; background: #fbf8f1; border: 2px solid var(--card); border-radius: 4px; padding: 1px; }
+.older-chip svg { height: 100%; width: auto; }
+.older-chip .act-emoji { font-size: 15px; }
+.pile-top { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.pile-from { font-size: 11px; color: #ffc9c2; text-align: center; }
+.mini-act {
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: space-between;
+  width: 58px; height: 78px; padding: 6px 3px 4px; border-radius: 7px;
+  background: #fbf8f1; box-shadow: inset 0 0 0 3px #fbf8f1, inset 0 0 0 5px var(--card), 0 3px 0 #000;
+}
+.mini-act-icon { height: 40px; display: flex; align-items: center; justify-content: center; }
+.mini-act-icon svg { height: 100%; width: auto; }
+.mini-act-icon .act-emoji { font-size: 28px; }
+.mini-act-name { font-size: 8.5px; font-weight: 800; line-height: 1.05; text-align: center; text-transform: uppercase; color: var(--card); }
+.safety-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.safety-card { position: relative; display: inline-flex; }
+.safety-card.cf .mini-act { transform: rotate(-14deg); }
+.cf-badge {
+  position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%) rotate(-6deg);
+  padding: 1px 5px; border-radius: 6px; background: var(--yellow); color: #5c0508;
+  font-size: 9px; font-weight: 900; white-space: nowrap;
+}
+
 /* ---------- Écoute de la partie ---------- */
 
 .listen-row { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 12px; max-width: 600px; margin-left: auto; margin-right: auto; }
@@ -713,6 +761,9 @@ button.turn-left:active { transform: scale(.96); }
   .track-panel { padding: 4px; }
   main { padding-left: 10px; padding-right: 10px; }
   .log-row select { font-size: 14px; padding: 5px 4px; }
+  .table-zones { grid-template-columns: 1fr; padding: 8px; }
+  .mini-act { width: 52px; height: 70px; }
+  .mini-act-icon { height: 34px; }
   .toast { font-size: 15px; }
   .setup-players { grid-template-columns: 1fr; }
   .setup-car { width: 76px; }
