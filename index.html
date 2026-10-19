@@ -120,6 +120,7 @@
             <div class="listen-row">
               <button id="btn-listen" class="small-btn listen-btn">🎤 Écouter la partie</button>
               <p id="listen-status" class="listen-status"></p>
+              <button id="btn-end" class="small-btn end-btn">🏁 Fin de manche (pioche vide)</button>
             </div>
           </div>
         </section>
@@ -189,7 +190,15 @@
         <p class="win-kicker">Champion de la course</p>
         <h2 id="win-title" class="win-title"></h2>
         <div id="win-car" class="win-car"></div>
-        <ol id="ranking" class="ranking"></ol>
+        <p id="grand-champion" class="grand-champion" hidden></p>
+        <h3 class="win-section">Les points de la manche</h3>
+        <div id="score-board" class="score-board"></div>
+        <label id="delay-row" class="delay-row" hidden>
+          <input type="checkbox" id="chk-delayed">
+          <span id="delay-text"></span>
+        </label>
+        <h3 class="win-section">Le film de la course</h3>
+        <div id="race-film" class="race-film"></div>
         <div class="control-row">
           <button id="btn-rematch" class="big-btn go">Revanche</button>
           <button id="btn-new" class="big-btn">Nouvelle partie</button>

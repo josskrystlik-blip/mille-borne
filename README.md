@@ -87,6 +87,31 @@ répond (à l'écran et à voix haute) **oui ou non, avec la raison**, par exemp
 tu es arrêté au feu rouge, il te faut d'abord un Feu vert ». Si c'est oui, **Jouer cette carte**
 la pose directement.
 
+## 🧮 Points et résumé de fin de manche
+
+À l'arrivée, le jeu compte les points de la manche selon le barème classique du Mille Bornes :
+
+| Ce qui rapporte | Points |
+|---|---|
+| Chaque km parcouru | 1 par km |
+| Chaque botte | 100 (les 4 bottes : +300) |
+| Chaque coup fourré | +300 |
+| Manche terminée (arrivé pile) | 400 |
+| Sans carte 200 | +300 |
+| Capot (les autres n'ont posé aucun km) | +500 |
+| Retardement (arrivé avec la pioche vide) | +300 |
+
+- Le détail ligne par ligne s'affiche pour chaque pilote, avec le **total de la partie / 5000**.
+  On enchaîne les manches avec **Revanche** (les points s'additionnent) ; **Nouvelle partie**
+  remet à zéro. Le premier à **5000 points** est le grand champion.
+- Le jeu ne voit pas la pioche : une case permet d'ajouter le **retardement** (+300).
+- **🏁 Fin de manche (pioche vide)** dans le widget « Tour de jeu » termine une manche où
+  personne n'arrive : on compte les points sans prime « manche terminée ».
+- **Le film de la course** : nombre de coups, cartes km, attaques posées / reçues, bottes,
+  et des badges (« Le plus taquin », « Le plus protégé », « Le plus rapide »).
+- En mode **Km seulement**, seuls les km et la manche terminée comptent.
+- L'« allonge » (passer de 700 à 1000 km en cours de manche) n'est pas gérée.
+
 ## Écran de course en widgets
 
 L'écran est découpé en 5 widgets : **Tour de jeu**, **Circuit**, **Cartes posées**, **Positions** et **Historique**.

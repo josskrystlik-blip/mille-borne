@@ -73,6 +73,9 @@ function defaultState() {
     voice: '',
     rules: 'full', // 'full' : attaques, parades et bottes ; 'km' : seulement les kilomètres
     layout: { order: [...WIDGETS], collapsed: {} },
+    manches: [],      // points de chaque manche jouée : [[points du pilote 0, 1, …], …]
+    scored: false,    // la manche en cours est-elle déjà comptée ?
+    delayed: false,   // retardement : le gagnant est arrivé après que la pioche s'est vidée
   };
 }
 
@@ -440,6 +443,7 @@ $('#btn-start').addEventListener('click', () => {
   }));
   state.current = 0;
   state.log = [];
+  state.manches = [];
   recomputeKm();
   startRace();
 });
@@ -447,7 +451,7 @@ $('#btn-start').addEventListener('click', () => {
 /* ---------- Course ---------- */
 
 function startRace() {
-  state.screen = 'race'; state.phase = 'draw'; cardTab = autoTab(state.current); save();
+  state.screen = 'race'; state.phase = 'draw'; state.scored = false; state.delayed = false; cardTab = autoTab(state.current); save();
   show('race');
   renderRace(true);
   countdown();
@@ -1295,6 +1299,16 @@ function ruleSections() {
     { title: '🏆 Fin de la partie', speak: 'La partie s\'arrête quand un pilote arrive pile. Si la pioche est vide, on continue avec ses cartes.',
       html: `<p>Dès qu'un pilote arrive <b>pile</b> à ${goal} km, il gagne. Si la pioche est vide, on continue avec les cartes
         qu'on a en main jusqu'à ce que plus personne ne puisse jouer.</p>` },
+    { title: '🧮 Les points', speak: 'À la fin de la manche, chaque kilomètre vaut un point. Chaque botte cent points, chaque coup fourré trois cents de plus. Celui qui termine gagne quatre cents points. On joue plusieurs manches : le premier à cinq mille points a gagné.',
+      html: `<ul class="points-list">
+        <li>Chaque km parcouru : <b>1 point</b></li>
+        <li>Chaque botte : <b>100</b> — les 4 bottes : <b>+300</b></li>
+        <li>Chaque coup fourré : <b>+300</b></li>
+        <li>Manche terminée : <b>400</b> — sans carte 200 : <b>+300</b></li>
+        <li>Capot (les autres n'ont posé aucun km) : <b>+500</b></li>
+        <li>Retardement (arrivé avec la pioche vide) : <b>+300</b></li>
+      </ul><p>On enchaîne les manches avec <b>Revanche</b> : le premier à <b>${GOAL_POINTS} points</b> gagne la partie.
+      Le jeu fait les comptes à l'arrivée.</p>` },
     { title: '🧒 Mode Découverte', speak: 'En mode Découverte, pas besoin de feu vert, pas de coup fourré, et autant de cartes deux cents que tu veux.',
       html: `<p class="rule-highlight">Pour les plus jeunes : <b>pas besoin de feu vert</b> pour démarrer ni après une réparation,
         <b>pas de coup fourré</b>, et <b>pas de limite</b> de cartes 200. Le reste ne change pas.</p>` },
@@ -1458,31 +1472,153 @@ $('#help').addEventListener('click', (e) => { if (e.target.id === 'help') hideHe
 
 /* ---------- Arrivée ---------- */
 
+const GOAL_POINTS = 5000;
+
+// Points de la manche, ligne par ligne, selon le barème du Mille Bornes
+function scoreManche(winner) {
+  const others = (i) => state.players.filter((q, k) => k !== i);
+  return state.players.map((p, i) => {
+    const lines = [];
+    const add = (label, pts) => { if (pts) lines.push({ label, pts }); };
+    add(`${p.km} km parcourus`, p.km);
+    if (fullRules()) {
+      const n = p.safetyCards.length;
+      add(`${n} botte${n > 1 ? 's' : ''} × 100`, n * 100);
+      if (n === 4) add('Les 4 bottes', 300);
+      const cf = p.safetyCards.filter((c) => c.cf).length;
+      add(`${cf} coup${cf > 1 ? 's' : ''} fourré${cf > 1 ? 's' : ''} × 300`, cf * 300);
+    }
+    if (i === winner) {
+      add('Manche terminée', 400);
+      if (fullRules()) {
+        if (p.n200 === 0) add('Sans carte 200', 300);
+        if (others(i).every((q) => q.km === 0)) add('Capot : les autres n\'ont pas roulé', 500);
+        if (state.delayed) add('Retardement : pioche vide', 300);
+      }
+    }
+    return { lines, total: lines.reduce((sum, l) => sum + l.pts, 0) };
+  });
+}
+
+// Cumul de toutes les manches (la manche en cours comprise une fois comptée)
+function totals() {
+  return state.players.map((p, i) => state.manches.reduce((sum, m) => sum + (m[i] || 0), 0));
+}
+
+// Le film de la course : ce que chacun a fait, tiré de l'historique
+function raceStats() {
+  const stats = state.players.map(() => ({ kmCards: 0, n200: 0, attacks: 0, received: 0, safeties: 0, cf: 0 }));
+  state.log.forEach((e) => {
+    const a = ACTIONS[e.card];
+    if (!a) { stats[e.player].kmCards += 1; if (e.km === 200) stats[e.player].n200 += 1; return; }
+    if (a.kind === 'hazard') { stats[e.player].attacks += 1; stats[e.target].received += 1; }
+    if (a.kind === 'safety') { stats[e.player].safeties += 1; if (e.cf) stats[e.player].cf += 1; }
+  });
+  return stats;
+}
+
 function showWinner(index) {
   state.screen = 'win';
   state.winner = index;
+  // La manche n'est ajoutée au cumul qu'une seule fois (même si on recharge la page)
+  if (!state.scored) {
+    state.manches.push(scoreManche(index).map((x) => x.total));
+    state.scored = true;
+  }
   save();
   show('win');
   renderWinner();
   sfx.win();
   confetti();
-  setTimeout(() => say(`Bravo ${state.players[index].name} ! Tu as gagné la course !`), 900);
+  const scores = scoreManche(index);
+  const best = index >= 0 ? index : scores.map((x, i) => i).sort((x, y) => scores[y].total - scores[x].total)[0];
+  const p = state.players[best];
+  setTimeout(() => say(index >= 0
+    ? `Bravo ${p.name} ! Tu as gagné la course, et tu marques ${scores[best].total} points !`
+    : scores[best].total > 0
+      ? `Fin de la manche ! ${p.name} marque le plus de points : ${scores[best].total}.`
+      : 'Fin de la manche ! Personne ne marque de points cette fois.'), 900);
 }
 
 function renderWinner() {
-  const w = state.players[state.winner] || state.players[0];
-  $('#win-title').textContent = w.name;
-  $('#win-car').innerHTML = carSvg(w.color, w.number);
-  $('#ranking').innerHTML = [...state.players]
-    .sort((a, b) => b.km - a.km)
-    .map((p, i) => `
-      <li style="--car:${p.color}">
-        <span class="pos">P${i + 1}</span>
-        <span class="mini-car">${carSvg(p.color, p.number)}</span>
-        <span class="rank-name">${escapeHtml(p.name)}</span>
-        <span class="rank-km">${p.km} km</span>
-      </li>`).join('');
+  const index = state.winner;
+  const scores = scoreManche(index);
+  const tot = totals();
+  const order = state.players.map((p, i) => i).sort((x, y) => scores[y].total - scores[x].total || state.players[y].km - state.players[x].km);
+  const hero = state.players[index >= 0 ? index : order[0]] || state.players[0];
+  $('.win-kicker').textContent = index >= 0 ? 'Champion de la course' : 'Fin de la manche – le plus de points';
+  $('#win-title').textContent = hero.name;
+  $('#win-car').innerHTML = carSvg(hero.color, hero.number);
+
+  // Grand champion : le premier à 5000 points
+  const leader = tot.indexOf(Math.max(...tot));
+  const champ = $('#grand-champion');
+  champ.hidden = tot[leader] < GOAL_POINTS;
+  champ.textContent = `🏆 ${state.players[leader].name} dépasse ${GOAL_POINTS} points : grand champion de la partie !`;
+
+  $('#score-board').innerHTML = order.map((i, n) => {
+    const p = state.players[i];
+    return `
+      <div class="score-row ${i === index ? 'winner' : ''}" style="--car:${p.color}">
+        <div class="score-head">
+          <span class="pos">P${n + 1}</span>
+          <span class="mini-car">${carSvg(p.color, p.number)}</span>
+          <span class="rank-name">${escapeHtml(p.name)}</span>
+          <span class="score-total">${scores[i].total}<small> pts</small></span>
+        </div>
+        <ul class="score-lines">${scores[i].lines.map((l) => `<li><span>${l.label}</span><b>+${l.pts}</b></li>`).join('') || '<li><span>Pas de points cette manche</span><b>0</b></li>'}</ul>
+        <div class="score-cumul">
+          <span>Total de la partie : <b>${tot[i]}</b> / ${GOAL_POINTS}</span>
+          <span class="cumul-gauge"><span style="width:${Math.min(100, (tot[i] / GOAL_POINTS) * 100)}%"></span></span>
+          ${state.manches.length > 1 ? `<small>${state.manches.length} manches jouées</small>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  // Retardement : seul le jeu réel sait si la pioche était vide
+  const delayRow = $('#delay-row');
+  delayRow.hidden = !(index >= 0 && fullRules());
+  $('#chk-delayed').checked = state.delayed;
+  if (index >= 0) $('#delay-text').textContent = `La pioche était déjà vide quand ${hero.name} est arrivé (retardement, +300)`;
+
+  const stats = raceStats();
+  const champion = (key) => {
+    const max = Math.max(...stats.map((x) => x[key]));
+    return max > 0 ? stats.map((x, i) => (x[key] === max ? state.players[i].name : null)).filter(Boolean).join(' et ') : null;
+  };
+  const badges = [
+    ['🏹', 'Le plus taquin', champion('attacks'), 'a posé le plus d\'attaques'],
+    ['🛡️', 'Le plus protégé', champion('safeties'), 'a posé le plus de bottes'],
+    ['🐦', 'Le plus rapide', champion('n200'), 'a posé le plus de cartes 200'],
+  ].filter((b) => b[2]);
+  $('#race-film').innerHTML = `
+    <p class="film-intro">${state.log.length} coups joués pendant cette manche.</p>
+    ${badges.length ? `<div class="badges">${badges.map(([icon, title, who, why]) => `
+      <div class="badge"><span class="badge-icon">${icon}</span><b>${title}</b><span>${escapeHtml(who)}</span><small>${why}</small></div>`).join('')}</div>` : ''}
+    <div class="film-table ${fullRules() ? '' : 'km'}">
+      <div class="film-row film-header"><span>Pilote</span><span>Cartes km</span>${fullRules() ? '<span>Attaques posées</span><span>Attaques reçues</span><span>Bottes</span>' : ''}</div>
+      ${state.players.map((p, i) => `
+        <div class="film-row" style="--car:${p.color}"><span class="film-name">${escapeHtml(p.name)}</span><span>${stats[i].kmCards}</span>
+        ${fullRules() ? `<span>${stats[i].attacks}</span><span>${stats[i].received}</span><span>${stats[i].safeties}${stats[i].cf ? ` (${stats[i].cf} c. fourré)` : ''}</span>` : ''}</div>`).join('')}
+    </div>`;
 }
+
+$('#chk-delayed').addEventListener('change', (e) => {
+  state.delayed = e.target.checked;
+  // On remplace les points de la manche en cours dans le cumul
+  state.manches[state.manches.length - 1] = scoreManche(state.winner).map((x) => x.total);
+  save();
+  sfx.click();
+  renderWinner();
+});
+
+// Fin de manche sans gagnant : la pioche est vide et plus personne ne peut jouer
+$('#btn-end').addEventListener('click', () => {
+  dialog('Fin de la manche ?', '<p class="dialog-text">La pioche est vide et plus personne ne peut jouer ? On compte les points.</p>', [
+    { label: '🏁 Oui, on compte les points', cls: 'go', onClick: () => { stopListening(); showWinner(-1); } },
+    { label: 'Non, on continue' },
+  ]);
+});
 
 function confetti() {
   const box = $('#confetti');
@@ -1519,7 +1655,7 @@ function show(screen) {
 
 function newGame() {
   if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-  state.screen = 'setup'; state.players = []; state.log = [];
+  state.screen = 'setup'; state.players = []; state.log = []; state.manches = [];
   save(); show('setup'); renderSetup();
 }
 
