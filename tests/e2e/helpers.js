@@ -43,6 +43,8 @@ async function openPage(browser, base, viewport) {
   await page.goto(base);
   await page.evaluate(() => localStorage.clear());
   await page.reload();
+  // La prise en main s'ouvre au premier lancement : les scénarios la passent (sauf le sien)
+  await page.click('#btn-wizard-skip');
   return page;
 }
 

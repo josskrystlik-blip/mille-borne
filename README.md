@@ -9,6 +9,10 @@ avec une jauge jusqu'au drapeau. Sous les cartes, un tableau des positions (P1, 
 
 ## Comment jouer
 
+Au **premier lancement**, une courte présentation en 6 étapes explique le principe, fait choisir
+l'affichage et les règles, montre un tour de jeu et les aides (« Passer la présentation » pour
+l'ignorer, « 👋 Revoir la prise en main » en bas de l'écran de départ pour la revoir).
+
 1. **Combien de pilotes ?** Choisir de 2 à 6 joueurs, taper les prénoms et la couleur de chaque voiture.
 2. **Distance** : 1000 km (règle classique) ou 700 km (course courte).
 3. **Départ** Feu rouge, 3-2-1… partez !

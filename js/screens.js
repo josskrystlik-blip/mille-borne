@@ -467,4 +467,7 @@ if (state.screen === 'race' && state.players.length) {
   show('race'); renderRace(true);
 }
 else if (state.screen === 'win' && state.players.length) { show('win'); renderWinner(); }
-else { state.screen = 'setup'; show('setup'); renderSetup(); }
+else {
+  state.screen = 'setup'; show('setup'); renderSetup();
+  if (!state.onboarded) openWizard();
+}

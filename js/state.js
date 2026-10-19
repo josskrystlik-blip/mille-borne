@@ -20,7 +20,8 @@ function defaultState() {
     camera: 'tv',
     learn: { on: true, level: 1, history: [], skipped: 0 }, // défis des pilotes apprentis
     stars: [],        // étoiles gagnées aux défis, par pilote
-    awaitTurn: null,  // tour suivant mis en attente pendant un défi     // affichage Adulte : '2d' ou une caméra 3D ('tv', 'dessus', 'virage')
+    awaitTurn: null,
+    onboarded: false, // la prise en main a été vue  // tour suivant mis en attente pendant un défi     // affichage Adulte : '2d' ou une caméra 3D ('tv', 'dessus', 'virage')
     rules: 'full', // 'full' : attaques, parades et bottes ; 'km' : seulement les kilomètres
     layout: { order: [...WIDGETS], collapsed: {} },
     manches: [],      // points de chaque manche jouée : [[points du pilote 0, 1, …], …]

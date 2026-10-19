@@ -86,6 +86,7 @@
       </div>
 
       <button id="btn-start" class="big-btn go">Départ ▶</button>
+      <button id="btn-wizard-again" class="small-btn rules-link">👋 Revoir la prise en main</button>
     </section>
 
     <!-- Écran 2 : la course (widgets qu'on peut réduire, agrandir et déplacer) -->
@@ -239,6 +240,20 @@
   </div>
 
   <!-- Aide : combinaisons de cartes pour arriver pile -->
+  <div id="wizard" class="overlay help-overlay" hidden>
+    <div class="help-panel wizard-panel" role="dialog" aria-modal="true" aria-labelledby="wizard-title">
+      <p id="wizard-step" class="wizard-step"></p>
+      <h2 id="wizard-title" class="help-title"></h2>
+      <div id="wizard-body" class="wizard-body"></div>
+      <div class="wizard-dots" aria-hidden="true"></div>
+      <div class="wizard-nav">
+        <button id="btn-wizard-back" class="small-btn">◀ Retour</button>
+        <button id="btn-wizard-next" class="big-btn go">Suivant ▶</button>
+      </div>
+      <button id="btn-wizard-skip" class="wizard-skip">Passer la présentation</button>
+    </div>
+  </div>
+
   <div id="help" class="overlay help-overlay" hidden>
     <div class="help-panel" role="dialog" aria-labelledby="help-title">
       <h2 id="help-title" class="help-title"></h2>
@@ -319,6 +334,7 @@
   <script src="js/race.js"></script>
   <script src="js/listen.js"></script>
   <script src="js/scan.js"></script>
+  <script src="js/wizard.js"></script>
   <script src="js/screens.js"></script>
 </body>
 </html>
