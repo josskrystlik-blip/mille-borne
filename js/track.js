@@ -123,7 +123,7 @@ function buildRoad() {
     }),
     ...state.players.map((p, i) => `
       <div class="car3d" data-index="${i}" style="width:${(carW / vw * 100).toFixed(2)}%">
-        <span class="car3d-shadow"></span>${topCarSvg(p.color)}
+        <span class="car3d-shadow"></span>${topCarSvg(p.color, p.number)}
       </div>
       <div class="tag3d" data-index="${i}" style="--car:${p.color}"><span></span></div>`),
   ].join('');

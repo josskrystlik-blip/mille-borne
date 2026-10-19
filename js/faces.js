@@ -59,16 +59,52 @@ function borneSvg(label, cap = '', cls = 'borne-svg', attrs = '') {
   </svg>`;
 }
 
-// Voiture de course vue de dessus (circuit en 3D), l'avant vers la droite
-function topCarSvg(color) {
+// Voiture de course vue de dessus (circuit en 3D), l'avant vers la droite.
+// Prototype d'endurance : carrosserie galbée, verrière, pneus, aileron, phares.
+let topCarId = 0;
+function topCarSvg(color, number = '') {
+  const id = `tc${++topCarId}`;
+  const body = 'M11 11 Q10 6 16 5.5 L40 5 Q49 5 55 9 L75 10 Q86 6.5 97 8 L108 11.5 Q118 15 119 26 Q118 37 108 40.5 L97 44 Q86 45.5 75 42 L55 43 Q49 47 40 47 L16 46.5 Q10 46 11 41 Z';
+  const tire = (x, y, w) => `
+    <rect x="${x}" y="${y}" width="${w}" height="8" rx="2.2" fill="#121315"/>
+    <path d="M${x + 3} ${y + 1.5} V${y + 6.5} M${x + 7} ${y + 1.5} V${y + 6.5} M${x + w - 7} ${y + 1.5} V${y + 6.5} M${x + w - 3} ${y + 1.5} V${y + 6.5}" stroke="#2a2c30" stroke-width="1.2"/>`;
   return `
-  <svg class="top-car" viewBox="0 0 54 26" aria-hidden="true">
-    <rect x="6" y="1" width="9" height="5" rx="1.5" fill="#15181c"/><rect x="6" y="20" width="9" height="5" rx="1.5" fill="#15181c"/>
-    <rect x="37" y="1" width="9" height="5" rx="1.5" fill="#15181c"/><rect x="37" y="20" width="9" height="5" rx="1.5" fill="#15181c"/>
-    <path d="M3 8 Q3 4 8 4 L44 5 Q52 6 53 13 Q52 20 44 21 L8 22 Q3 22 3 18 Z" fill="${color}"/>
-    <rect x="0" y="5" width="4" height="16" rx="1" fill="${color}"/>
-    <path d="M20 8 L33 8 Q37 13 33 18 L20 18 Q18 13 20 8 Z" fill="#0f1317" opacity=".85"/>
-    <rect x="9" y="12" width="36" height="2" fill="#fff" opacity=".55"/>
+  <svg class="top-car" viewBox="0 0 120 52" aria-hidden="true">
+    <defs>
+      <linearGradient id="${id}s" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#000" stop-opacity=".45"/>
+        <stop offset=".22" stop-color="#000" stop-opacity=".05"/>
+        <stop offset=".42" stop-color="#fff" stop-opacity=".28"/>
+        <stop offset=".5" stop-color="#fff" stop-opacity=".05"/>
+        <stop offset=".8" stop-color="#000" stop-opacity=".12"/>
+        <stop offset="1" stop-color="#000" stop-opacity=".5"/>
+      </linearGradient>
+      <linearGradient id="${id}g" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#4d6c8c"/>
+        <stop offset=".55" stop-color="#16202b"/>
+        <stop offset="1" stop-color="#0b1016"/>
+      </linearGradient>
+    </defs>
+    ${tire(16, 1, 18)}${tire(16, 43, 18)}${tire(88, 2, 15)}${tire(88, 42, 15)}
+    <path d="${body}" fill="${color}"/>
+    <path d="M14 22.6 H117 V24.6 H14 Z M14 27.4 H117 V29.4 H14 Z" fill="#f4f4f4" opacity=".9"/>
+    <path d="${body}" fill="url(#${id}s)" stroke="rgba(0,0,0,.55)" stroke-width=".8"/>
+    <path d="M44 11.5 L54 13 L54 15.5 L44 14.5 Z M44 40.5 L54 39 L54 36.5 L44 37.5 Z" fill="#14171b"/>
+    <path d="M17 26 H46" stroke="rgba(0,0,0,.35)" stroke-width="1.2"/>
+    <path d="M52 19 Q56 15.5 66 15.5 L78 16.5 Q86 18 87 26 Q86 34 78 35.5 L66 36.5 Q56 36.5 52 33 Q50 26 52 19 Z" fill="url(#${id}g)" stroke="#0a0d11" stroke-width="1"/>
+    <path d="M60 18.5 Q70 17.5 79 19.5" stroke="#fff" stroke-opacity=".45" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+    <ellipse cx="73" cy="9.5" rx="3.2" ry="1.6" fill="${color}" stroke="rgba(0,0,0,.6)" stroke-width=".6"/>
+    <ellipse cx="73" cy="42.5" rx="3.2" ry="1.6" fill="${color}" stroke="rgba(0,0,0,.6)" stroke-width=".6"/>
+    <path d="M110 13.5 Q115 16 116.5 19 L111.5 18 Z M110 38.5 Q115 36 116.5 33 L111.5 34 Z" fill="#fff6c9" stroke="rgba(0,0,0,.4)" stroke-width=".5"/>
+    <path d="M114 20 Q118.5 26 114 32" stroke="#14171b" stroke-width="1.6" fill="none"/>
+    ${number !== '' ? `<circle cx="99" cy="26" r="6.2" fill="#fff" stroke="#14171b" stroke-width=".8"/>
+    <text x="99" y="28.6" text-anchor="middle" font-family="'Russo One', Impact, sans-serif" font-size="7.5" fill="#14171b">${number}</text>` : ''}
+    <rect x="1" y="2.5" width="9" height="47" rx="1.5" fill="#17191d"/>
+    <rect x="2.5" y="4" width="6" height="44" rx="1" fill="#2a2e34"/>
+    <rect x="0" y="1.5" width="11" height="3" rx="1" fill="${color}"/>
+    <rect x="0" y="47.5" width="11" height="3" rx="1" fill="${color}"/>
+    <rect x="11" y="15" width="2" height="5" fill="#ff3b30"/>
+    <rect x="11" y="32" width="2" height="5" fill="#ff3b30"/>
   </svg>`;
 }
 
