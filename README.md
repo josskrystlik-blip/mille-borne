@@ -146,7 +146,7 @@ que si on l'avait touchée ; elle apparaît avec 📷 dans l'historique).
 On choisit l'affichage sur l'écran de départ (panneau **Affichage**) ou pendant la course avec le
 bouton en haut à droite :
 - **🧒 Enfant** (par défaut) : seulement l'essentiel – Tour de jeu, Circuit, Cartes posées et
-  Positions. L'historique, 🎤 Écouter, 🏁 Fin de manche, ⏏ menu et les poignées des widgets sont
+  Positions. L'historique, 🎤 Écouter, 🏁 Fin de manche et les poignées des widgets sont
   cachés (rien ne bouge par erreur). 📷 n'apparaît que si des cartes ont été apprises.
   Pour en sortir, **garder le doigt appuyé 1 seconde** sur 🧒 (un anneau se remplit).
 - **👨‍👩‍👧 Famille** : toutes les options, avec le look course « Route 66 ».
@@ -201,7 +201,7 @@ Sur iPad, d'autres voix de meilleure qualité se téléchargent dans *Réglages 
 Contenu énoncé → Voix*.
 
 La partie est sauvegardée dans le navigateur : on peut recharger la page sans rien perdre.
-Le bouton 🔊 coupe le son et la voix, ⏏ revient au menu.
+Le bouton 🔊 coupe le son et la voix, 🛑 arrête la partie (après confirmation) et revient au menu, dans tous les affichages.
 
 ## Lancer le jeu
 

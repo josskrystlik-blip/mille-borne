@@ -5,10 +5,10 @@ const { assert, startGame, stateOf, noHorizontalScroll } = require('./helpers');
 module.exports = async function child(page) {
   await startGame(page, { names: ['Léo', 'Papa'], rules: 'full', mode: 'child' });
   assert.equal((await stateOf(page)).uiMode, 'child');
-  for (const sel of ['#btn-mode', '#btn-play', '#btn-ask', '.widget[data-widget="track"]', '.widget[data-widget="table"]', '.widget[data-widget="board"]']) {
+  for (const sel of ['#btn-mode', '#btn-home', '#btn-play', '#btn-ask', '.widget[data-widget="track"]', '.widget[data-widget="table"]', '.widget[data-widget="board"]']) {
     assert.ok(await page.isVisible(sel), `${sel} visible en mode Enfant`);
   }
-  for (const sel of ['#btn-listen', '#btn-end', '#btn-home', '#btn-scan', '.widget[data-widget="log"]', '.widget-btn', '.widget-grip']) {
+  for (const sel of ['#btn-listen', '#btn-end', '#btn-scan', '.widget[data-widget="log"]', '.widget-btn', '.widget-grip']) {
     assert.ok(await page.isHidden(sel), `${sel} masqué en mode Enfant`);
   }
   await noHorizontalScroll(page);
@@ -54,4 +54,16 @@ module.exports = async function child(page) {
   await page.mouse.move(bar.x + 30, 5, { steps: 8 });
   await page.mouse.up();
   assert.deepEqual(await page.$$eval('#widgets > .widget', (w) => w.map((x) => x.dataset.widget)), before);
+
+  // Arrêter la partie (aussi en mode Enfant) : confirmation puis retour au menu
+  await page.click('#btn-play', { force: true });
+  await page.click('#cards .card[data-card="green"]');
+  await page.waitForTimeout(1300);
+  await page.click('#btn-home');
+  assert.match(await page.textContent('#dialog-title'), /Arrêter/);
+  await page.click('#dialog-buttons .big-btn:has-text("Non")');
+  assert.ok(await page.isVisible('#screen-race'), 'on peut annuler');
+  await page.click('#btn-home');
+  await page.click('#dialog-buttons .big-btn:has-text("Oui")');
+  assert.ok(await page.isVisible('#screen-setup'), 'retour au menu');
 };

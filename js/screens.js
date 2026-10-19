@@ -259,8 +259,12 @@ function newGame() {
 }
 
 $('#btn-home').addEventListener('click', () => {
-  if (state.screen === 'race' && state.log.length && !confirm('Arrêter la course et revenir au menu ?')) return;
-  newGame();
+  sfx.click();
+  if (state.screen !== 'race' || !state.log.length) { newGame(); return; }
+  dialog('Arrêter la partie ?', '<p class="dialog-text">La course en cours sera perdue et on revient au menu.</p>', [
+    { label: '🛑 Oui, arrêter', cls: 'go', onClick: newGame },
+    { label: 'Non, continuer' },
+  ]);
 });
 
 $('#btn-music').addEventListener('click', () => {
