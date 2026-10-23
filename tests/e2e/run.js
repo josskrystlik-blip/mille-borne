@@ -8,9 +8,9 @@ const path = require('path');
 const { chromium } = require(process.env.PW || 'playwright');
 
 const ROOT = path.join(__dirname, '..', '..');
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.json': 'application/json' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.json': 'application/json', '.webmanifest': 'application/manifest+json' };
 const VIEWPORTS = [['téléphone', { width: 390, height: 844 }], ['tablette', { width: 1024, height: 768 }]];
-const SCENARIOS = ['race', 'rules', 'voice', 'scan', 'child', 'display', 'learn', 'wizard'];
+const SCENARIOS = ['race', 'rules', 'voice', 'scan', 'child', 'display', 'learn', 'wizard', 'offline'];
 
 function serve() {
   const server = http.createServer((req, res) => {

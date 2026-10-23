@@ -117,7 +117,9 @@ async function openScan(mode = 'play') {
   try {
     await loadScanModels();
   } catch (e) {
-    scanStatus('Impossible de charger la reconnaissance : vérifiez la connexion Internet (nécessaire la première fois).');
+    scanStatus(navigator.onLine
+      ? 'Impossible de charger la reconnaissance : réessayez dans un instant.'
+      : 'Pas d\'Internet : ouvrez la caméra une première fois avec Internet, elle marchera ensuite hors-ligne.');
     return;
   }
   const total = Object.values(scan.models.counts()).reduce((a, b) => a + b, 0);

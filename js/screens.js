@@ -261,6 +261,7 @@ function show(screen) {
   ['setup', 'race', 'win'].forEach((s) => { $(`#screen-${s}`).hidden = s !== screen; });
   $('#btn-home').hidden = screen === 'setup';
   $('#btn-mode').hidden = screen !== 'race';
+  if (typeof keepAwake === 'function') keepAwake();
   renderMode(screen);
   window.scrollTo(0, 0);
 }

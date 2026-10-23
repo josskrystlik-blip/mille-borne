@@ -6,6 +6,13 @@
   <title>Mille Bornes Turbo</title>
   <meta name="description" content="Compteur de kilomètres pour le Mille Bornes : toutes les voitures font la course sur la même route jusqu'à l'arrivée.">
   <meta name="theme-color" content="#d7141a">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Mille Bornes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,600;0,700;1,700;1,800&family=Racing+Sans+One&family=Russo+One&display=swap" rel="stylesheet">
@@ -32,6 +39,7 @@
       <span class="route66" aria-hidden="true"><span>ROUTE</span>66</span>
     </h1>
     <div class="topbar-actions">
+      <span id="offline-dot" class="offline-dot" title="Pas d'Internet : le jeu marche quand même" hidden>📴</span>
       <span id="listen-dot" class="listen-dot" title="L'écoute vocale est en marche" hidden>🎤</span>
       <button id="btn-mode" class="icon-btn mode-btn" aria-label="Mode parent (appui long)" hidden>🧒</button>
       <button id="btn-rules" class="icon-btn" aria-label="Les règles en 1 minute">📖</button>
@@ -86,6 +94,7 @@
       </div>
 
       <button id="btn-start" class="big-btn go">Départ ▶</button>
+      <button id="btn-install" class="small-btn rules-link install-btn" hidden>📲 Installer l'appli sur l'écran d'accueil</button>
       <button id="btn-wizard-again" class="small-btn rules-link">👋 Revoir la prise en main</button>
     </section>
 
@@ -336,5 +345,6 @@
   <script src="js/scan.js"></script>
   <script src="js/wizard.js"></script>
   <script src="js/screens.js"></script>
+  <script src="js/pwa.js"></script>
 </body>
 </html>

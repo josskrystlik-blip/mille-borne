@@ -226,6 +226,20 @@ Le bouton 🔊 coupe le son et la voix, 🛑 arrête la partie (après confirmat
 
 ## Lancer le jeu
 
+### 📲 Installer l'appli sur la tablette
+
+Une fois le jeu en ligne (GitHub Pages, ci-dessous), il s'installe comme une vraie appli :
+- **Android** (Chrome, Edge) : bouton **« 📲 Installer l'appli sur l'écran d'accueil »** en bas
+  de l'écran de départ ;
+- **iPad / iPhone** (Safari) : le même bouton explique la marche à suivre (Partager ⬆︎ →
+  *Sur l'écran d'accueil*).
+
+L'appli s'ouvre alors en plein écran, garde l'écran allumé pendant la course et **marche sans
+Internet** (un petit 📴 s'affiche en haut). Seules exceptions : la **caméra**, qu'il faut ouvrir
+une première fois avec Internet (elle marche ensuite hors-ligne), et l'**écoute vocale**, qui
+passe par Internet sur certains appareils. Quand on est en ligne, l'appli se met à jour toute
+seule.
+
 Aucune installation : ouvrir `index.html` dans un navigateur (idéalement une tablette).
 
 Pour l'avoir en ligne gratuitement avec **GitHub Pages** :
@@ -246,6 +260,9 @@ Sur tablette, « Ajouter à l'écran d'accueil » permet de le lancer comme une 
   - `track.js` – circuit et effets ; `race.js` – écran de course, aide, règles, commentateur ;
   - `listen.js` – écoute vocale ; `scan.js` – caméra ; `screens.js` – départ, arrivée, widgets,
     affichages Enfant/Famille/Adulte et démarrage.
+- `manifest.webmanifest`, `sw.js`, `icons/` – l'appli installable et hors-ligne
+  (`js/pwa.js` : installation, voyant hors-ligne, écran allumé) ; les icônes se régénèrent avec
+  `node tests/tools/make-icons.js`.
 - `tests/` – les tests automatiques.
 
 ## Développement / tests

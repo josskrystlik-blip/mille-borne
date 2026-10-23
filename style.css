@@ -1169,3 +1169,13 @@ body.theme-adult {
 .wizard-nav .big-btn { flex: 1; white-space: nowrap; font-size: clamp(18px, 5vw, 26px); }
 .wizard-skip { align-self: center; background: none; border: 0; color: var(--muted); font: 600 15px 'Barlow', sans-serif; text-decoration: underline; min-height: 44px; }
 #btn-wizard-again { margin-top: 12px; }
+
+/* ---------- Appli installée ---------- */
+.topbar { padding-top: max(8px, env(safe-area-inset-top)); }
+@media (orientation: landscape) and (min-width: 601px) {
+  .topbar { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+}
+.offline-dot { align-self: center; font-size: 16px; padding: 3px 6px; border-radius: 999px; background: rgba(0, 0, 0, .35); border: 1px solid rgba(255, 255, 255, .4); }
+.install-btn { margin-top: 12px; }
+.install-steps { margin: 0 0 14px; padding-left: 1.4em; text-align: left; font-size: 17px; line-height: 1.5; }
+.share-ico { display: inline-block; padding: 0 6px; border: 1px solid currentColor; border-radius: 4px; }

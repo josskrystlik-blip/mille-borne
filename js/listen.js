@@ -44,6 +44,11 @@ function makeRecognition() {
       listen.on = false;
       renderListen();
       setListenStatus('Le micro est refusé : autorisez-le dans les réglages du navigateur.');
+    } else if (e.error === 'network') {
+      // Sur certains appareils, la reconnaissance vocale passe par Internet
+      listen.on = false;
+      renderListen();
+      setListenStatus('L\'écoute a besoin d\'Internet sur cet appareil : touchez les cartes à l\'écran en attendant.');
     }
   };
   return r;
