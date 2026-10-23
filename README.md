@@ -171,6 +171,10 @@ bouton en haut à droite :
 - **🎩 Adulte** : toutes les options avec un **look sobre** : couleurs sombres et dorées,
   typographie classique, sans décor ni voitures à yeux, animations discrètes. Les cartes gardent
   l'apparence des vraies cartes.
+  **4 palettes de couleurs** au choix (pastilles sous les boutons d'affichage au départ, ou
+  dans le menu Affichage pendant la course) : **Nuit** (anthracite et or), **Clair** (fond blanc,
+  lisible en plein soleil), **Circuit** (vert anglais et crème), **Contraste élevé** (noir, blanc,
+  jaune).
   Le **circuit y est en 3D** : piste vue en perspective, voitures vues de dessus avec leur ombre,
   bornes et prénoms debout au bord de la piste. Des boutons au-dessus du circuit changent la
   caméra : **Vue TV**, **Dessus**, **Virage** (rotation animée) ou **2D** (le circuit à plat habituel).
@@ -278,6 +282,8 @@ npm run test:e2e -- child voice   # seulement certains scénarios
 ```
 
 - `tests/unit/` charge `js/data.js` et `js/rules.js` sans navigateur (`node --test`).
+- `tests/e2e/contrast.e2e.js` vérifie que tous les textes restent lisibles (contraste WCAG AA)
+  dans chaque affichage et chaque palette.
 - `tests/e2e/` joue de vraies parties (pioche, attaques, coup fourré, voix et caméra simulées,
   affichages Enfant et Adulte, arrivée et points) ; le lanceur démarre son propre petit serveur web.
 - GitHub Actions lance les deux à chaque push (`.github/workflows/tests.yml`).

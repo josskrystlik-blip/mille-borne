@@ -9,6 +9,12 @@ module.exports = async function display(page) {
   assert.ok(await page.isHidden('.scenery'), 'pas de décor de désert');
   await noHorizontalScroll(page);
 
+  // Palette au choix (visible seulement en Adulte)
+  assert.ok(await page.isVisible('#palette-buttons'));
+  await page.click('#palette-buttons [data-palette="clair"]');
+  assert.equal(await page.evaluate(() => document.body.dataset.palette), 'clair');
+  assert.equal(await page.getAttribute('#palette-buttons [data-palette="clair"]', 'aria-pressed'), 'true');
+
   await startGame(page, { names: ['Anne', 'Marc'], rules: 'km', mode: 'adult' });
   assert.equal((await stateOf(page)).uiMode, 'adult');
   assert.ok(await page.evaluate(() => !document.body.classList.contains('mode-child')));
@@ -39,6 +45,15 @@ module.exports = async function display(page) {
   // Mémorisé après rechargement
   await page.reload();
   assert.ok(await page.evaluate(() => document.body.classList.contains('theme-adult')));
+  assert.equal(await page.evaluate(() => document.body.dataset.palette), 'clair');
+
+  // Changement de palette pendant la course, depuis le menu Affichage
+  await page.click('#btn-mode');
+  await page.click('[data-dialog-palette="circuit"]');
+  assert.equal(await page.evaluate(() => document.body.dataset.palette), 'circuit');
+  assert.ok(await page.isVisible('#dialog'), 'le menu reste ouvert pour comparer');
+  await page.click('#dialog-buttons .display-btn:has-text("Adulte")');
+  assert.equal((await stateOf(page)).palette, 'circuit');
 
   // Arrivée : le thème reste, sans confettis
   await setState(page, `s.log = [200, 200, 100, 100, 100, 100, 100].map((km) => ({ player: 0, km })); s.current = 0; s.phase = 'draw';`);

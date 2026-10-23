@@ -17,6 +17,7 @@ function defaultState() {
     music: false,         // petite musique de course
     commentator: true,    // le commentateur de course
     uiMode: 'child',  // 'child' : écran simplifié ; 'family' : tout, look course ; 'adult' : tout, look sobre
+    palette: 'nuit',  // couleurs de l'affichage Adulte : 'nuit', 'clair', 'circuit', 'contraste'
     camera: 'tv',
     learn: { on: true, level: 1, history: [], skipped: 0 }, // défis des pilotes apprentis
     stars: [],        // étoiles gagnées aux défis, par pilote

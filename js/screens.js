@@ -41,12 +41,26 @@ function renderSetup() {
     <button class="goal-btn ${state.uiMode === id ? 'active' : ''}" data-display="${id}">
       <span class="goal-km">${icon} ${t}</span><span class="goal-sub">${sub}</span>
     </button>`).join('');
+  $('#palette-buttons').hidden = state.uiMode !== 'adult';
+  $('#palette-buttons').innerHTML = paletteHtml('data-palette');
   $('#chk-learn').checked = state.learn.on;
   $('#learn-level').textContent = `(niveau ${state.learn.level})`;
   renderVoices();
 }
 
 $('#chk-learn').addEventListener('change', (e) => { state.learn = { ...state.learn, on: e.target.checked }; save(); });
+
+$('#palette-buttons').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-palette]'); if (!b) return;
+  setPalette(b.dataset.palette); renderSetup();
+});
+
+// Palette choisie dans le menu Affichage pendant la course (la fenêtre reste ouverte)
+$('#dialog-body').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-dialog-palette]'); if (!b) return;
+  setPalette(b.dataset.dialogPalette);
+  document.querySelectorAll('[data-dialog-palette]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+});
 
 $('#display-buttons').addEventListener('click', (e) => {
   const b = e.target.closest('[data-display]'); if (!b) return;
@@ -306,6 +320,28 @@ const DISPLAYS = [
   ['family', '👨‍👩‍👧', 'Famille', 'Toutes les options'],
   ['adult', '🎩', 'Adulte', 'Tout, look sobre'],
 ];
+// Palettes de l'affichage Adulte : [id, nom, fond, surface, accent, texte]
+const PALETTES = [
+  ['nuit', 'Nuit', '#12161c', '#20272f', '#c9a45c', '#e9edf2'],
+  ['clair', 'Clair', '#eef0f3', '#ffffff', '#1f5fbf', '#1d2733'],
+  ['circuit', 'Circuit', '#0f2a1e', '#173528', '#d4ad3b', '#f3ecd8'],
+  ['contraste', 'Contraste élevé', '#000000', '#000000', '#ffd400', '#ffffff'],
+];
+
+function paletteHtml(attr) {
+  return PALETTES.map(([id, name, bg, surface, accent, text]) => `
+    <button class="palette-btn" ${attr}="${id}" aria-pressed="${state.palette === id}">
+      <span class="palette-swatch" style="background:${bg}; border-color:${surface}">
+        <span style="background:${surface}; color:${text}">Aa</span><span style="background:${accent}"></span>
+      </span>
+      <span class="palette-name">${name}</span>
+    </button>`).join('');
+}
+
+function setPalette(id) {
+  state.palette = id; save(); renderMode(); sfx.click();
+}
+
 const HOLD_MS = 1000; // appui long pour quitter le mode Enfant
 let holdTimer = null;
 let holdDone = false;
@@ -316,6 +352,7 @@ function renderMode(screen = state.screen) {
   const b = $('#btn-mode');
   document.body.classList.toggle('mode-child', child && screen === 'race');
   document.body.classList.toggle('theme-adult', state.uiMode === 'adult');
+  document.body.dataset.palette = PALETTES.some(([id]) => id === state.palette) ? state.palette : 'nuit';
   let learned = false;
   try { learned = !!localStorage.getItem(SCAN_KEY); } catch (e) { /* stockage indisponible */ }
   document.body.classList.toggle('has-scan', learned);
@@ -340,7 +377,8 @@ function setMode(mode) {
 }
 
 function chooseDisplay() {
-  dialog('Affichage', '<p class="dialog-text">Choisis l\'écran qui convient aux joueurs.</p>',
+  dialog('Affichage', `<p class="dialog-text">Choisis l'écran qui convient aux joueurs.</p>
+    ${state.uiMode === 'adult' ? `<p class="dialog-text palette-label">Couleurs</p><div class="palette-row">${paletteHtml('data-dialog-palette')}</div>` : ''}`,
     DISPLAYS.map(([id, icon, t, sub]) => ({
       label: `${icon} ${t}<small>${sub}</small>`,
       cls: `display-btn ${state.uiMode === id ? 'go' : ''}`,
