@@ -34,8 +34,9 @@ function installFakes() {
   }
 }
 
-async function openPage(browser, base, viewport) {
+async function openPage(browser, base, viewport, coverage = false) {
   const page = await browser.newPage({ viewport });
+  if (coverage) await page.coverage.startJSCoverage({ resetOnNavigation: false });
   page.errors = [];
   page.on('pageerror', (e) => page.errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error') page.errors.push(m.text()); });

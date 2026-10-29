@@ -297,7 +297,14 @@ npm install         # une fois, pour Playwright
 npx playwright install chromium
 npm run test:e2e    # scénarios complets dans un navigateur, sur téléphone et tablette
 npm run test:e2e -- child voice   # seulement certains scénarios
+npm run coverage    # couverture : unitaires + scénarios, rapport dans coverage/index.html
+npm run coverage:unit   # couverture des seuls tests unitaires (quelques secondes)
 ```
+
+La couverture est mesurée directement par le moteur JavaScript (Node pour les tests unitaires,
+Chromium pour les scénarios), sans dépendance de plus. Le rapport `coverage/index.html` donne le
+pourcentage de lignes et de fonctions exécutées par fichier et montre en rouge les lignes qu'aucun
+test n'exécute. Sur GitHub, il est joint à chaque exécution des tests (« couverture-des-tests »).
 
 - `tests/unit/` charge `js/data.js` et `js/rules.js` sans navigateur (`node --test`).
 - `tests/e2e/contrast.e2e.js` vérifie que tous les textes restent lisibles (contraste WCAG AA)

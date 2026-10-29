@@ -32,11 +32,15 @@ function serve() {
   const base = `http://127.0.0.1:${server.address().port}/`;
   const browser = await chromium.launch();
   const { openPage } = require('./helpers');
+  // npm run coverage : on mesure quelles lignes du jeu les scénarios exécutent
+  const coverageOut = process.env.COVERAGE_OUT;
+  const v8 = coverageOut && require('../coverage/v8');
+  const coverage = {};
   let failed = 0;
   for (const name of SCENARIOS.filter((s) => !only.length || only.includes(s))) {
     const scenario = require(`./${name}.e2e.js`);
     for (const [label, viewport] of VIEWPORTS) {
-      const page = await openPage(browser, base, viewport);
+      const page = await openPage(browser, base, viewport, !!coverageOut);
       const t0 = Date.now();
       try {
         await scenario(page);
@@ -47,11 +51,21 @@ function serve() {
         console.log(`✘ ${name} (${label})\n  ${String(e.stack || e).split('\n').slice(0, 6).join('\n  ')}`);
         if (process.env.SHOTS) await page.screenshot({ path: path.join(process.env.SHOTS, `fail-${name}-${viewport.width}.png`), fullPage: true });
       }
+      if (coverageOut) {
+        for (const e of await page.coverage.stopJSCoverage()) {
+          const m = e.url.match(/\/(js\/[\w-]+\.js)$/);
+          if (m) v8.addEntry(coverage, m[1], e.source, e.functions);
+        }
+      }
       await page.close();
     }
   }
   await browser.close();
   server.close();
+  if (coverageOut) {
+    const plain = Object.fromEntries(Object.entries(coverage).map(([f, c]) => [f, { ...c, bytes: Buffer.from(c.bytes).toString('base64') }]));
+    fs.writeFileSync(coverageOut, JSON.stringify(plain));
+  }
   console.log(failed ? `\n${failed} scénario(s) en échec` : '\nTous les scénarios sont verts');
   process.exit(failed ? 1 : 0);
 })();
