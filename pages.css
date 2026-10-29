@@ -1,0 +1,18 @@
+/* Pages À propos et Confidentialité */
+:root { --ink: #1d2733; --muted: #4f5b69; --red: #c8102e; --bg: #f6f3ee; --card: #ffffff; --line: #ddd6cc; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 500 17px/1.6 'Barlow', 'Helvetica Neue', Arial, sans-serif; }
+header { background: var(--red); color: #fff; padding: 18px 16px; }
+header .wrap { display: flex; align-items: center; gap: 12px; }
+header img { width: 48px; height: 48px; border-radius: 10px; }
+header h1 { margin: 0; font-size: 26px; line-height: 1.1; }
+header p { margin: 2px 0 0; font-size: 15px; opacity: .95; }
+.wrap { max-width: 720px; margin: 0 auto; }
+main { padding: 8px 16px 40px; }
+h2 { font-size: 21px; margin: 28px 0 8px; }
+p, li { max-width: 68ch; }
+ul { padding-left: 1.2em; }
+a { color: var(--red); font-weight: 700; }
+.cta { display: inline-block; margin: 18px 0 4px; padding: 12px 20px; border-radius: 10px; background: var(--red); color: #fff; text-decoration: none; }
+.note { padding: 12px 14px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); color: var(--muted); font-size: 15px; }
+footer { padding: 16px; text-align: center; font-size: 14px; color: var(--muted); }

@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Mille Bornes Turbo</title>
-  <meta name="description" content="Compteur de kilomètres pour le Mille Bornes : toutes les voitures font la course sur la même route jusqu'à l'arrivée.">
+  <title>Bornes Turbo</title>
+  <meta name="description" content="Bornes Turbo, compagnon non officiel du jeu de cartes Mille Bornes® : les voitures font la course sur un circuit, l'appli compte les kilomètres et aide les enfants.">
   <meta name="theme-color" content="#d7141a">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Mille Bornes">
+  <meta name="apple-mobile-web-app-title" content="Bornes Turbo">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -35,7 +35,7 @@
   <header class="topbar">
     <h1 class="logo">
       <svg class="logo-bolt" viewBox="0 0 40 60" aria-hidden="true"><path d="M24 2 L6 34 L19 34 L13 58 L35 22 L22 22 Z" fill="#ffd31a" stroke="#8c0a0e" stroke-width="3" stroke-linejoin="round"/></svg>
-      <span class="logo-text">Mille Bornes</span>
+      <span class="logo-text">Bornes Turbo</span>
       <span class="route66" aria-hidden="true"><span>ROUTE</span>66</span>
     </h1>
     <div class="topbar-actions">
@@ -97,6 +97,12 @@
       <button id="btn-start" class="big-btn go">Départ ▶</button>
       <button id="btn-install" class="small-btn rules-link install-btn" hidden>📲 Installer l'appli sur l'écran d'accueil</button>
       <button id="btn-wizard-again" class="small-btn rules-link">👋 Revoir la prise en main</button>
+      <a id="btn-feedback" class="small-btn rules-link feedback-link" target="_blank" rel="noopener" hidden>💬 Donner mon avis</a>
+      <button id="btn-wipe" class="small-btn rules-link">🗑️ Effacer toutes les données de cet appareil</button>
+      <p class="legal-note">Bornes Turbo est un compagnon gratuit et <b>non officiel</b>, à utiliser avec
+        votre jeu Mille Bornes®. Mille Bornes est une marque déposée de son propriétaire (Dujardin) ;
+        Bornes Turbo n'est ni affilié, ni approuvé par lui.<br>
+        <a href="a-propos.html">À propos</a> · <a href="confidentialite.html">Confidentialité</a></p>
     </section>
 
     <!-- Écran 2 : la course (widgets qu'on peut réduire, agrandir et déplacer) -->

@@ -23,7 +23,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
   renderInstall();
 });
 
-window.addEventListener('appinstalled', () => { pwa.prompt = null; renderInstall(); toast('📲 Mille Bornes est installé sur l\'écran d\'accueil !'); });
+window.addEventListener('appinstalled', () => { pwa.prompt = null; renderInstall(); toast('📲 Bornes Turbo est installé sur l\'écran d\'accueil !'); });
 
 $('#btn-install').addEventListener('click', async () => {
   sfx.click();
@@ -38,7 +38,7 @@ $('#btn-install').addEventListener('click', async () => {
     `<ol class="install-steps">
        <li>Touchez le bouton <b>Partager</b> <span class="share-ico" aria-hidden="true">⬆︎</span> de Safari.</li>
        <li>Choisissez <b>Sur l'écran d'accueil</b>.</li>
-       <li>Touchez <b>Ajouter</b> : l'icône Mille Bornes apparaît, le jeu s'ouvre en plein écran.</li>
+       <li>Touchez <b>Ajouter</b> : l'icône Bornes Turbo apparaît, le jeu s'ouvre en plein écran.</li>
      </ol>`,
     [{ label: 'J\'ai compris', cls: 'go' }]);
 });

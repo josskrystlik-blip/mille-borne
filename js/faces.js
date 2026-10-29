@@ -123,73 +123,83 @@ function actionIcon(id) {
   return `<span class="act-emoji">${ACTIONS[id].emoji}</span>`;
 }
 
-/* ---------- Faces des cartes, dans le style des cartes du jeu ---------- */
-// Cartes blanches, illustration à plat, titre en couleur repris à l'envers en bas
-
-const LIME = '#a6ce39';
+/* ---------- Faces des cartes ---------- */
+// Style propre à Bornes Turbo : un cadre de la couleur de la famille (km, attaque, parade,
+// botte), un bandeau titre, un grand pictogramme au centre.
 const FACE_TITLES = {
-  red: ['Stop'], green: ['Roulez'], limit: ['LIMITE DE', 'VITESSE'], end: ['FIN DE LIMITE', 'DE VITESSE'],
-  fuel: ['PANNE', 'D\'ESSENCE'], flat: ['CREVÉ !'], accident: ['ACCIDENT'],
-  gas: ['ESSENCE'], spare: ['ROUE DE', 'SECOURS'], repair: ['RÉPARATIONS'],
-  priority: ['véhicule', 'prioritaire'], tank: ['citerne', 'd\'essence'], puncture: ['increvable'], ace: ['as du', 'volant'],
+  red: ['FEU ROUGE'], green: ['FEU VERT'], limit: ['LIMITE', 'À 50'], end: ['FIN DE', 'LIMITE'],
+  fuel: ['PANNE', 'D\'ESSENCE'], flat: ['CREVAISON'], accident: ['ACCIDENT'],
+  gas: ['ESSENCE'], spare: ['ROUE DE', 'SECOURS'], repair: ['RÉPARATION'],
+  priority: ['PRIORITAIRE'], tank: ['CITERNE'], puncture: ['INCREVABLE'], ace: ['AS DU', 'VOLANT'],
 };
-const FACE_COLORS = { hazard: '#e3262b', remedy: '#1597c9', safety: '#1a1a1a' };
+const FACE_COLORS = { hazard: '#d0202a', remedy: '#1e8a3c', safety: '#b8860b' };
+const FACE_KINDS = { hazard: 'ATTAQUE', remedy: 'PARADE', safety: 'BOTTE' };
 
-function faceTitle(lines, color, size) {
-  const text = (y0) => lines.map((l, k) => `<text x="9" y="${y0 + k * (size + 1)}" class="face-title" font-size="${size}" fill="${color}">${l}</text>`).join('');
-  // Le titre en haut à gauche, et le même à l'envers en bas à droite
-  return `${text(16)}<g transform="rotate(180 50 70)">${text(16)}</g>`;
+// Cadre commun : bord coloré, bandeau titre en haut, mot de la famille en bas
+function faceFrame(color, title, footer, inner) {
+  const size = title.some((l) => l.length > 9) ? 10 : 12;
+  const titleY = title.length > 1 ? 15 : 21;
+  return `
+  <svg class="face" viewBox="0 0 100 140" aria-hidden="true">
+    <rect x="2" y="2" width="96" height="136" rx="10" fill="#fff" stroke="${color}" stroke-width="4"/>
+    <path d="M2 12 Q2 2 12 2 H88 Q98 2 98 12 V32 H2 Z" fill="${color}"/>
+    ${title.map((l, k) => `<text x="50" y="${titleY + k * (size + 1)}" text-anchor="middle" class="face-title" font-size="${size}" fill="#fff">${l}</text>`).join('')}
+    ${inner}
+    ${footer}
+  </svg>`;
+}
+
+const faceFooter = (text, color) => `<text x="50" y="130" text-anchor="middle" class="face-title" font-size="8" letter-spacing="1.5" fill="${color}">${text}</text>`;
+
+// Chevrons de vitesse sous les cartes km : 1 pour 25, 5 pour 200
+function speedChevrons(n, color) {
+  const w = 9; const x0 = 50 - (n * w) / 2;
+  return Array.from({ length: n }, (_, k) => `<path d="M${x0 + k * w + 2} 119 L${x0 + k * w + 7} 125 L${x0 + k * w + 2} 131" fill="none" stroke="${color}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`).join('');
+}
+
+// Petit badge : « ! » pour une attaque, « ✓ » pour une parade
+function faceBadge(kind, color) {
+  if (kind === 'hazard') return `<circle cx="80" cy="50" r="10" fill="${color}" stroke="#fff" stroke-width="2"/><rect x="78.6" y="43" width="2.8" height="9" rx="1.2" fill="#fff"/><circle cx="80" cy="55.6" r="1.6" fill="#fff"/>`;
+  if (kind === 'remedy') return `<circle cx="80" cy="50" r="10" fill="${color}" stroke="#fff" stroke-width="2"/><path d="M75.5 50 L79 53.5 L85 46.5" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>`;
+  return '';
 }
 
 function kmFace(km) {
   const c = CARDS.find((x) => x.km === km);
-  const size = km >= 100 ? 10 : 12;
-  return `
-  <svg class="face" viewBox="0 0 100 140" aria-hidden="true">
-    <rect x="1" y="1" width="98" height="138" rx="9" fill="#fff"/>
-    <text x="8" y="14" class="face-num" font-size="9" fill="#555">${km}</text>
-    <path d="M10 62 Q28 44 52 52 T90 46 V70 H10 Z" fill="${LIME}"/>
-    <path d="M10 70 Q44 56 90 66 V74 H10 Z" fill="#3aa04a"/>
-    <path d="M30 68 V42 Q30 25 48 25 Q66 25 66 42 V68 Z" fill="#fff" stroke="#1a1a1a" stroke-width="1.6"/>
-    <path d="M30 42 Q30 25 48 25 Q66 25 66 42 Z" fill="#e3262b" stroke="#1a1a1a" stroke-width="1.6"/>
-    <rect x="34" y="45" width="28" height="15" rx="1" fill="#fff" stroke="#1a1a1a" stroke-width="1.2"/>
-    <text x="48" y="56.5" text-anchor="middle" class="face-num" font-size="${size}" fill="#1a1a1a">${km}</text>
-    <text x="79" y="44" text-anchor="middle" font-size="17">${c.emoji}</text>
-    <g transform="rotate(180 50 106)">
-      <text x="50" y="124" text-anchor="middle" class="face-big" font-size="${km >= 100 ? 34 : 44}" fill="${c.color}">${km}</text>
-    </g>
-    <g transform="rotate(180 88 131)"><text x="88" y="134" text-anchor="middle" class="face-num" font-size="8" fill="#555">${km}</text></g>
-  </svg>`;
+  const speed = CARDS.findIndex((x) => x.km === km) + 1; // 1 à 5 chevrons : plus c'est grand, plus ça va loin
+  return faceFrame(c.color, ['KILOMÈTRES'], speedChevrons(speed, c.color), `
+    <path d="M38 38 H62 L86 112 H14 Z" fill="#3b3f46"/>
+    <path d="M50 42 V50 M50 98 V110" stroke="#fff" stroke-width="2.4"/>
+    <rect x="16" y="56" width="68" height="38" rx="8" fill="#fff" stroke="${c.color}" stroke-width="3"/>
+    <text x="50" y="${km >= 100 ? 84 : 86}" text-anchor="middle" class="face-big" font-size="${km >= 100 ? 26 : 30}" fill="${c.color}">${km}</text>`);
 }
 
 function trafficLight(on) {
-  return `<rect x="38" y="42" width="24" height="54" rx="6" fill="#1a1a1a"/><rect x="47.5" y="96" width="5" height="16" fill="#1a1a1a"/>
-    <circle cx="50" cy="55" r="7" fill="${on === 'red' ? '#e3262b' : '#555'}"/><circle cx="50" cy="69" r="7" fill="#555"/>
-    <circle cx="50" cy="83" r="7" fill="${on === 'green' ? LIME : '#555'}"/>`;
+  return `<rect x="38" y="42" width="24" height="56" rx="7" fill="#1a1a1a"/><rect x="47.5" y="98" width="5" height="16" fill="#1a1a1a"/>
+    <circle cx="50" cy="55" r="7" fill="${on === 'red' ? '#e3262b' : '#555'}"/><circle cx="50" cy="70" r="7" fill="#555"/>
+    <circle cx="50" cy="85" r="7" fill="${on === 'green' ? '#3ccf5a' : '#555'}"/>`;
 }
 
 function faceArt(id) {
   const a = ACTIONS[id];
-  const emoji = (e, size = 40) => `<text x="50" y="${80 + size * 0.35}" text-anchor="middle" font-size="${size}">${e}</text>`;
-  if (id === 'red') return `<circle cx="66" cy="88" r="20" fill="#e3262b"/>${trafficLight('red')}`;
-  if (id === 'green') return `<circle cx="66" cy="88" r="20" fill="${LIME}"/>${trafficLight('green')}`;
-  if (id === 'limit') return `<rect x="47" y="70" width="6" height="42" fill="#1a1a1a"/>
-    <circle cx="50" cy="66" r="24" fill="#fff" stroke="#e3262b" stroke-width="7"/><text x="50" y="74" text-anchor="middle" class="face-num" font-size="20" fill="#1a1a1a">50</text>`;
-  if (id === 'end') return `<rect x="47" y="70" width="6" height="42" fill="#1a1a1a"/>
-    <circle cx="50" cy="66" r="24" fill="#fff" stroke="#1597c9" stroke-width="4"/><text x="50" y="74" text-anchor="middle" class="face-num" font-size="20" fill="#9aa">50</text>
-    <path d="M28 92 L72 40" stroke="#1597c9" stroke-width="9" stroke-linecap="round"/>`;
-  if (a.kind === 'hazard') return `<path d="M8 104 L92 46 L92 64 L8 122 Z" fill="#e3262b"/>${emoji(a.emoji)}`;
-  if (a.kind === 'remedy') return `<path d="M8 46 L92 104 L92 122 L8 64 Z" fill="${LIME}"/>${emoji(a.emoji)}`;
-  // Bottes : le grand « V » vert des cartes du jeu
-  return `<path d="M12 32 L50 116 L88 32 L72 32 L50 82 L28 32 Z" fill="#2ea836"/>${emoji(a.emoji, 36)}`;
+  const color = FACE_COLORS[a.kind];
+  const emoji = (e, size = 38) => `<text x="50" y="${78 + size * 0.36}" text-anchor="middle" font-size="${size}">${e}</text>`;
+  const disc = `<circle cx="50" cy="78" r="34" fill="${color}" fill-opacity=".12"/>`;
+  if (id === 'red' || id === 'green') return `${disc}${trafficLight(id)}`;
+  if (id === 'limit') return `${disc}<circle cx="50" cy="78" r="26" fill="#fff" stroke="#e3262b" stroke-width="7"/>
+    <text x="50" y="87" text-anchor="middle" class="face-num" font-size="22" fill="#1a1a1a">50</text>`;
+  if (id === 'end') return `${disc}<circle cx="50" cy="78" r="26" fill="#fff" stroke="#888" stroke-width="3"/>
+    <text x="50" y="87" text-anchor="middle" class="face-num" font-size="22" fill="#999">50</text>
+    <path d="M32 96 L68 60" stroke="${color}" stroke-width="7" stroke-linecap="round"/>`;
+  if (a.kind === 'safety') {
+    // Bottes : un bouclier doré
+    return `<path d="M50 44 L78 54 V78 Q78 102 50 114 Q22 102 22 78 V54 Z" fill="${color}" fill-opacity=".18" stroke="${color}" stroke-width="3"/>${emoji(a.emoji, 32)}`;
+  }
+  return `${disc}${emoji(a.emoji)}`;
 }
 
 function actFace(id) {
   const kind = ACTIONS[id].kind;
-  return `
-  <svg class="face" viewBox="0 0 100 140" aria-hidden="true">
-    <rect x="1" y="1" width="98" height="138" rx="9" fill="#fff"/>
-    ${faceArt(id)}
-    ${faceTitle(FACE_TITLES[id], FACE_COLORS[kind], FACE_TITLES[id].some((l) => l.length > 10) ? 9 : 11)}
-  </svg>`;
+  const color = FACE_COLORS[kind];
+  return faceFrame(color, FACE_TITLES[id], faceFooter(FACE_KINDS[kind], color), faceArt(id) + faceBadge(kind, color));
 }

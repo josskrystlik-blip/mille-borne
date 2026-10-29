@@ -6,7 +6,10 @@ module.exports = async function voice(page) {
   await startGame(page, { names: ['Léo', 'Papa', 'Maman'], rules: 'full' });
   const hear = async (text, ms = 1600) => { await page.evaluate((t) => window.__hear(t), text); await page.waitForTimeout(ms); };
 
+  // La première fois, le jeu explique où part le son avant d'écouter
   await page.click('#btn-listen');
+  assert.match(await page.textContent('#dialog-body'), /reconnaissance vocale/);
+  await page.click('#dialog-buttons .big-btn:has-text("Activer")');
   assert.ok(await page.isVisible('#listen-dot'), 'le voyant 🎤 s\'allume dans la barre du haut');
   await hear('Léo pose un feu vert');
   await hear('Papa met un feu vert');

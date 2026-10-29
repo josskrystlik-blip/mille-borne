@@ -1250,3 +1250,13 @@ body.theme-adult {
 .theme-adult .log-del { color: #fff; }
 .theme-adult .left-unit { color: var(--strong); }
 .theme-adult .commentary { background: var(--surface); border-color: var(--accent); }
+
+/* ---------- Mention « non officiel » ---------- */
+.legal-note {
+  margin: 18px auto 4px; max-width: 640px; padding: 10px 14px; border-radius: 10px; text-align: center;
+  font-size: 13px; line-height: 1.45; font-weight: 500; color: #e6edf7; background: rgba(13, 29, 56, .9);
+}
+.theme-adult .legal-note { color: var(--muted); background: var(--surface-2); }
+.legal-note a { color: inherit; font-weight: 700; }
+#btn-wipe { margin-top: 12px; }
+.feedback-link { display: flex; align-items: center; justify-content: center; margin-top: 12px; text-decoration: none; }

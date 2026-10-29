@@ -41,6 +41,7 @@ module.exports = async function learn(page) {
 
   // Réponse dite à voix haute
   await page.click('#btn-listen');
+  await page.click('#dialog-buttons .big-btn:has-text("Activer")');
   await playKm(page, 25);
   await playKm(page, 25);
   await page.waitForSelector('#dialog-title:has-text("petit défi")', { timeout: 4000 });

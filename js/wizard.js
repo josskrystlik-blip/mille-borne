@@ -6,12 +6,13 @@ const wizard = { step: 0 };
 
 const WIZARD_STEPS = [
   {
-    title: 'Bienvenue sur Mille Bornes Turbo !',
+    title: 'Bienvenue sur Bornes Turbo !',
     say: 'Bienvenue ! Je vais vous montrer comment jouer avec l\'appli.',
     body: () => `
       <div class="wizard-hero">${carSvg('#d7141a', 7)}</div>
-      <p class="dialog-text">Gardez votre vrai jeu de cartes : l'appli fait avancer les voitures,
-        compte les kilomètres et vérifie les règles.</p>`,
+      <p class="dialog-text">Gardez votre vrai jeu de cartes Mille Bornes : l'appli fait avancer
+        les voitures, compte les kilomètres et vérifie les règles.</p>
+      <p class="wizard-hint">Bornes Turbo est un compagnon gratuit et non officiel.</p>`,
   },
   {
     title: 'Qui regarde l\'écran ?',
@@ -106,6 +107,22 @@ $('#btn-wizard-next').addEventListener('click', () => wizardGo(1));
 $('#btn-wizard-back').addEventListener('click', () => wizardGo(-1));
 $('#btn-wizard-skip').addEventListener('click', () => { sfx.click(); closeWizard(); });
 $('#btn-wizard-again').addEventListener('click', openWizard);
+
+// « Donner mon avis » : seulement si une adresse est configurée (FEEDBACK_URL, js/data.js)
+if (FEEDBACK_URL) { $('#btn-feedback').href = FEEDBACK_URL; $('#btn-feedback').hidden = false; }
+
+// Tout effacer : prénoms, parties, réglages et cartes apprises par la caméra
+$('#btn-wipe').addEventListener('click', () => {
+  sfx.click();
+  dialog('Effacer toutes les données ?',
+    `<p class="dialog-text">Les prénoms, les parties, les réglages et les cartes apprises par la
+      caméra seront effacés de cet appareil. Rien d'autre n'est gardé ailleurs.</p>`,
+    [{ label: '🗑️ Oui, tout effacer', cls: 'go', onClick: () => {
+      try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(SCAN_KEY); } catch (e) { /* rien */ }
+      location.reload();
+    } },
+    { label: 'Annuler' }]);
+});
 
 // Les choix faits dans la présentation s'appliquent tout de suite
 $('#wizard-body').addEventListener('click', (e) => {

@@ -1,8 +1,8 @@
 {
-  "name": "mille-bornes-turbo",
+  "name": "bornes-turbo",
   "version": "1.0.0",
   "private": true,
-  "description": "Compagnon de jeu Mille Bornes pour les enfants : circuit, règles, voix, points.",
+  "description": "Bornes Turbo : compagnon non officiel du jeu Mille Bornes pour les enfants (circuit, règles, voix, points).",
   "scripts": {
     "test": "node --test tests/unit/*.test.js",
     "test:e2e": "node tests/e2e/run.js"

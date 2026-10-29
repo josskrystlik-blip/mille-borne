@@ -13,8 +13,7 @@ const COLORS = [
 const NUMBERS = [7, 12, 23, 31, 58, 86];
 const DEFAULT_NAMES = ['Pilote 1', 'Pilote 2', 'Pilote 3', 'Pilote 4', 'Pilote 5', 'Pilote 6'];
 
-// Les cartes « étape » du Mille Bornes, avec leur animal
-// (couleurs du grand chiffre, comme sur les cartes du jeu)
+// Les cartes kilomètres, avec leur couleur (proche de celle des vraies cartes, pour les reconnaître)
 const CARDS = [
   { km: 25,  emoji: '🐌', name: 'Escargot',   color: '#1aa3d9' },
   { km: 50,  emoji: '🦆', name: 'Canard',     color: '#e3262b' },
@@ -56,3 +55,6 @@ const KINDS = {
 const actionsOf = (kind) => Object.keys(ACTIONS).filter((id) => ACTIONS[id].kind === kind);
 
 const STORAGE_KEY = 'mille-bornes-turbo-v1';
+
+// Adresse pour « Donner mon avis » (formulaire en ligne ou mailto:) ; vide = bouton masqué
+const FEEDBACK_URL = '';

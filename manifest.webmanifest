@@ -1,7 +1,7 @@
 {
-  "name": "Mille Bornes Turbo",
-  "short_name": "Mille Bornes",
-  "description": "Le compagnon du Mille Bornes : les voitures font la course, l'appli compte les kilomètres et vérifie les règles.",
+  "name": "Bornes Turbo",
+  "short_name": "Bornes Turbo",
+  "description": "Compagnon non officiel du jeu de cartes Mille Bornes® : les voitures font la course, l'appli compte les kilomètres et vérifie les règles.",
   "lang": "fr",
   "start_url": "./",
   "scope": "./",

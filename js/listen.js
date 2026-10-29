@@ -161,5 +161,14 @@ function applyHeard(i, km, text) {
 
 $('#btn-listen').addEventListener('click', () => {
   sfx.click();
-  if (listen.on) stopListening(); else startListening();
+  if (listen.on) { stopListening(); return; }
+  if (state.micNotice) { startListening(); return; }
+  // La première fois : dire clairement où part le son
+  dialog('🎤 Écouter la partie',
+    `<p class="dialog-text">Bornes Turbo utilise la reconnaissance vocale de votre navigateur.
+      Selon l'appareil, le son est envoyé à son service de transcription (Google pour Chrome et
+      Android, Apple pour Safari) pendant l'écoute. Bornes Turbo n'enregistre rien et ne garde
+      aucun son.</p>`,
+    [{ label: '🎤 Activer l\'écoute', cls: 'go', onClick: () => { state.micNotice = true; save(); startListening(); } },
+      { label: 'Pas maintenant' }]);
 });

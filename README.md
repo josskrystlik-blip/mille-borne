@@ -1,6 +1,11 @@
-# ⚡ Mille Bornes Turbo
+# ⚡ Bornes Turbo
 
-Un compteur de kilomètres ludique pour jouer au **Mille Bornes** avec les enfants.
+Un compteur de kilomètres ludique pour jouer au **Mille Bornes®** avec les enfants.
+
+> Bornes Turbo est un compagnon **gratuit et non officiel**, à utiliser avec votre propre jeu de
+> cartes Mille Bornes®. Mille Bornes est une marque déposée de son propriétaire (Dujardin) ;
+> ce projet n'est ni affilié, ni approuvé par lui.
+
 Toutes les voitures font la course sur un circuit ovale, une voie par pilote : un tour complet
 = la course entière, avec une borne tous les 100 km et la ligne d'arrivée au damier.
 On *voit* qui est devant et de combien, au lieu de faire des additions.
@@ -253,7 +258,8 @@ Sur tablette, « Ajouter à l'écran d'accueil » permet de le lancer comme une 
 
 ## Fichiers
 
-- `index.html` – les trois écrans (préparation, course, arrivée)
+- `index.html` – les trois écrans (préparation, course, arrivée) ;
+  `a-propos.html`, `confidentialite.html` et `pages.css` – les pages d'information
 - `style.css` – le thème « Route 66 »
 - `js/` – le jeu, découpé en scripts simples chargés dans l'ordre (le jeu marche aussi en
   ouvrant `index.html` directement, sans serveur) :
@@ -268,6 +274,18 @@ Sur tablette, « Ajouter à l'écran d'accueil » permet de le lancer comme une 
   (`js/pwa.js` : installation, voyant hors-ligne, écran allumé) ; les icônes se régénèrent avec
   `node tests/tools/make-icons.js`.
 - `tests/` – les tests automatiques.
+
+## Partager Bornes Turbo
+
+- **Gratuit, sans compte, sans publicité** ; tout reste sur l'appareil (voir
+  `confidentialite.html`). Le bouton « 🗑️ Effacer toutes les données de cet appareil » remet
+  l'appli à zéro.
+- **Non officiel** : « Mille Bornes » sert seulement à dire avec quel jeu l'utiliser ; les dessins
+  des cartes et des voitures sont propres à Bornes Turbo.
+- Pages à partager : `a-propos.html` (présentation) et `confidentialite.html`.
+- **Avis des familles** : mettre l'adresse d'un formulaire (ou `mailto:…`) dans `FEEDBACK_URL`
+  (`js/data.js`) pour afficher le bouton « 💬 Donner mon avis ».
+- Code sous licence MIT (`LICENSE`).
 
 ## Développement / tests
 
