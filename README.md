@@ -309,6 +309,8 @@ test n'exécute. Sur GitHub, il est joint à chaque exécution des tests (« cou
 - `tests/unit/` charge `js/data.js` et `js/rules.js` sans navigateur (`node --test`).
 - `tests/e2e/contrast.e2e.js` vérifie que tous les textes restent lisibles (contraste WCAG AA)
   dans chaque affichage et chaque palette.
+- Les scénarios tournent **4 à la fois** (chacun dans son navigateur isolé) : la suite complète
+  prend environ 2 minutes. `E2E_WORKERS=1 npm run test:e2e` les lance un par un.
 - `tests/e2e/` joue de vraies parties (pioche, attaques, coup fourré, voix et caméra simulées,
   affichages Enfant et Adulte, arrivée et points) ; le lanceur démarre son propre petit serveur web.
 - GitHub Actions lance les deux à chaque push (`.github/workflows/tests.yml`).

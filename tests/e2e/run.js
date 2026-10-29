@@ -4,13 +4,15 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 const { chromium } = require(process.env.PW || 'playwright');
 
 const ROOT = path.join(__dirname, '..', '..');
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.json': 'application/json', '.webmanifest': 'application/manifest+json' };
 const VIEWPORTS = [['téléphone', { width: 390, height: 844 }], ['tablette', { width: 1024, height: 768 }]];
-const SCENARIOS = ['race', 'rules', 'voice', 'scan', 'child', 'display', 'learn', 'wizard', 'offline', 'contrast', 'privacy'];
+// Les plus longs d'abord : les voies parallèles se remplissent mieux
+const SCENARIOS = ['rules', 'learn', 'contrast', 'voice', 'display', 'race', 'child', 'scan', 'privacy', 'offline', 'wizard'];
 
 function serve() {
   const server = http.createServer((req, res) => {
@@ -36,30 +38,44 @@ function serve() {
   const coverageOut = process.env.COVERAGE_OUT;
   const v8 = coverageOut && require('../coverage/v8');
   const coverage = {};
-  let failed = 0;
+  // Une tâche par scénario, taille d'écran et variante ; plusieurs tâches tournent en même temps,
+  // chacune dans son propre navigateur isolé (E2E_WORKERS pour changer le nombre)
+  const jobs = [];
   for (const name of SCENARIOS.filter((s) => !only.length || only.includes(s))) {
     const scenario = require(`./${name}.e2e.js`);
-    for (const [label, viewport] of VIEWPORTS) {
-      const page = await openPage(browser, base, viewport, !!coverageOut);
-      const t0 = Date.now();
-      try {
-        await scenario(page);
-        if (page.errors.length) throw new Error(`erreurs dans la page : ${page.errors.join(' | ')}`);
-        console.log(`✔ ${name} (${label}) ${Date.now() - t0} ms`);
-      } catch (e) {
-        failed++;
-        console.log(`✘ ${name} (${label})\n  ${String(e.stack || e).split('\n').slice(0, 6).join('\n  ')}`);
-        if (process.env.SHOTS) await page.screenshot({ path: path.join(process.env.SHOTS, `fail-${name}-${viewport.width}.png`), fullPage: true });
-      }
-      if (coverageOut) {
-        for (const e of await page.coverage.stopJSCoverage()) {
-          const m = e.url.match(/\/(js\/[\w-]+\.js)$/);
-          if (m) v8.addEntry(coverage, m[1], e.source, e.functions);
-        }
-      }
-      await page.close();
+    for (const variant of scenario.variants || [null]) {
+      for (const [label, viewport] of VIEWPORTS) jobs.push({ name, scenario, variant, label, viewport });
     }
   }
+  const workers = Number(process.env.E2E_WORKERS) || Math.max(2, Math.min(4, os.cpus().length));
+  const t0All = Date.now();
+  let failed = 0;
+  let next = 0;
+  const runJob = async ({ name, scenario, variant, label, viewport }) => {
+    const title = `${name}${variant ? ` ${variant}` : ''} (${label})`;
+    const page = await openPage(browser, base, viewport, !!coverageOut);
+    const t0 = Date.now();
+    try {
+      await scenario(page, variant);
+      if (page.errors.length) throw new Error(`erreurs dans la page : ${page.errors.join(' | ')}`);
+      console.log(`✔ ${title} ${Date.now() - t0} ms`);
+    } catch (e) {
+      failed++;
+      console.log(`✘ ${title}\n  ${String(e.stack || e).split('\n').slice(0, 6).join('\n  ')}`);
+      if (process.env.SHOTS) await page.screenshot({ path: path.join(process.env.SHOTS, `fail-${name}${variant ? `-${variant}` : ''}-${viewport.width}.png`), fullPage: true });
+    }
+    if (coverageOut) {
+      for (const e of await page.coverage.stopJSCoverage()) {
+        const m = e.url.match(/\/(js\/[\w-]+\.js)$/);
+        if (m) v8.addEntry(coverage, m[1], e.source, e.functions);
+      }
+    }
+    await page.close();
+  };
+  await Promise.all(Array.from({ length: workers }, async () => {
+    while (next < jobs.length) await runJob(jobs[next++]);
+  }));
+  console.log(`\n${jobs.length} tâches, ${workers} en parallèle, ${Math.round((Date.now() - t0All) / 1000)} s`);
   await browser.close();
   server.close();
   if (coverageOut) {

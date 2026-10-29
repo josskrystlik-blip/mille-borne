@@ -4,9 +4,10 @@
 const { assert, STORAGE_KEY } = require('./helpers');
 const contrastAudit = require('./contrast-audit');
 
-const VARIANTS = [['child', ''], ['family', ''], ['adult', 'nuit'], ['adult', 'clair'], ['adult', 'circuit'], ['adult', 'contraste']];
+// Une tâche par affichage/palette : le lanceur les fait tourner en parallèle
+const VARIANTS = ['child', 'family', 'adult/nuit', 'adult/clair', 'adult/circuit', 'adult/contraste'];
 
-module.exports = async function contrast(page) {
+module.exports = async function contrast(page, variant = 'adult/nuit') {
   const problems = [];
   const check = async (label, scope) => {
     (await page.evaluate(contrastAudit, scope)).forEach((f) => problems.push(`${label} : « ${f.text} » ${f.ratio}:1 (${f.where})`));
@@ -24,8 +25,9 @@ module.exports = async function contrast(page) {
   await page.click('#btn-start');
   await page.waitForSelector('#countdown', { state: 'hidden', timeout: 8000 });
 
-  for (const [mode, palette] of VARIANTS) {
-    const label = palette ? `${mode}/${palette}` : mode;
+  {
+    const [mode, palette] = variant.split('/');
+    const label = variant;
     // Léo attend son feu vert (le cas du bug signalé) ; Papa est presque arrivé
     const log = [{ player: 1, card: 'green' }, ...[200, 200, 100, 100, 100, 100, 100].map((km) => ({ player: 1, km })),
       { player: 1, card: 'limit', target: 0 }, { player: 0, card: 'ace' }];
@@ -56,3 +58,4 @@ module.exports = async function contrast(page) {
   }
   assert.deepEqual(problems, [], `textes peu lisibles :\n${problems.join('\n')}`);
 };
+module.exports.variants = VARIANTS;
